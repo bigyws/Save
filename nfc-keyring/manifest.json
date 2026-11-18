@@ -1,0 +1,11 @@
+{
+  "name": "콕태그",
+  "short_name": "콕태그",
+  "description": "NFC 키링으로 여는 반려동물 추억 앨범",
+  "start_url": "app.html",
+  "display": "standalone",
+  "background_color": "#f3f4fa",
+  "theme_color": "#ff5e7e",
+  "lang": "ko",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

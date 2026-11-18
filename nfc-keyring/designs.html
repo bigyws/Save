@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>콕태그 키링 디자인</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: print-proof sheet — controls row, 2×2 artboards on a cutting-mat grid, production spec table */
+:root {
+  --bg: #f7f8fc; --surface: #ffffff; --ink: #242638; --muted: #6b6f86; --line: #e3e6f0; --accent: #ff6f61; --mat: #e9f3ec; --mat-line: #cfe3d5;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #15161f; --surface: #1f2130; --ink: #eceef8; --muted: #a1a5bd; --line: #30344a; --accent: #ff8a7e; --mat: #1b2a22; --mat-line: #2a3f33; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #15161f; --surface: #1f2130; --ink: #eceef8; --muted: #a1a5bd; --line: #30344a; --accent: #ff8a7e; --mat: #1b2a22; --mat-line: #2a3f33; color-scheme: dark; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.6; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-block: 28px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+h1, h2 { font-family: var(--font-display); font-weight: 400; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 38px); }
+.sub { color: var(--muted); margin: 4px 0 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; }
+.controls label { display: flex; gap: 8px; align-items: center; font-size: 15px; }
+.controls input[type=text] { font: inherit; color: var(--ink); background: var(--bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 10px; width: 9em; }
+.controls input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+.boards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.board { margin: 0; background-color: var(--mat); background-image: linear-gradient(var(--mat-line) 1px, transparent 1px), linear-gradient(90deg, var(--mat-line) 1px, transparent 1px); background-size: 20px 20px; border-radius: 18px; padding: 18px; display: grid; gap: 8px; }
+.board svg { width: 100%; height: auto; display: block; }
+.board figcaption { display: flex; justify-content: space-between; font-size: 14px; }
+.board figcaption b { font-family: var(--font-display); font-weight: 400; font-size: 17px; }
+.board figcaption span { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+.spec { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 400; white-space: nowrap; width: 9em; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 3px solid #3a2a20; vertical-align: middle; margin-right: 6px; }
+.legend i.w { border-top: 6px solid #fff; outline: 1px solid var(--line); }
+.legend i.r { border-top: 2px dashed #e5484d; }
+a { color: var(--accent); }
+@media (max-width: 600px) { .boards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>키링 디자인 시안</h1>
+    <p class="sub">아크릴 키링 제작 업체에 그대로 보낼 수 있는 앞·뒤 디자인이에요. 원본 SVG 파일은 <code>designs/</code> 폴더에 있어요.</p>
+  </header>
+
+  <div class="controls">
+    <label for="nm">뒷면 이름 <input type="text" id="nm" maxlength="10" placeholder="CHOCO" autocomplete="off"></label>
+    <label for="guide"><input type="checkbox" id="guide" checked> NFC 칩 위치 표시</label>
+  </div>
+
+  <div class="boards" id="boards"></div>
+
+  <div class="legend"><span><i></i>칼선 (자르는 선)</span><span><i class="w"></i>흰색 바탕 인쇄 (테두리)</span><span><i class="r"></i>NFC 칩 위치 (인쇄하지 않음)</span></div>
+
+  <section class="spec">
+    <h2>제작 사양 (업체 전달용)</h2>
+    <table>
+      <tr><th>소재</th><td>투명 아크릴 3mm, 양면 UV 인쇄 + 화이트 레이어</td></tr>
+      <tr><th>크기</th><td>가로 약 55mm × 세로 약 50mm (고리 포함)</td></tr>
+      <tr><th>NFC 칩</th><td>NTAG215 원형 스티커 지름 25mm, 앞판과 뒷판 사이에 넣는 2겹 접합 방식 (또는 뒷면 에폭시 돔 안에 부착)</td></tr>
+      <tr><th>고리</th><td>지름 4mm 구멍 + 은색 O링, 키링 체인</td></tr>
+      <tr><th>파일</th><td><code>dog-front.svg</code> · <code>dog-back.svg</code> · <code>cat-front.svg</code> · <code>cat-back.svg</code> — 업체에 보낼 때는 글자를 윤곽선으로 바꾼 AI/PDF로 변환해 달라고 요청하세요.</td></tr>
+      <tr><th>NFC 기록 내용</th><td>URL 레코드 1개: <code>https://(내 사이트 주소)/memory.html?pet=(반려동물 아이디)</code></td></tr>
+    </table>
+  </section>
+  <p class="sub"><a href="index.html">← 판매 페이지로</a></p>
+</div>
+<script src="art.js"></script>
+<script>
+(() => {
+  const A = window.KokArt;
+  const items = [["dog", "front", "강아지 앞면"], ["dog", "back", "강아지 뒷면"], ["cat", "front", "고양이 앞면"], ["cat", "back", "고양이 뒷면"]];
+  function draw() {
+    const nm = document.getElementById("nm").value.toUpperCase().replace(/[^A-Z0-9 .\-]/g, "").slice(0, 10);
+    const guide = document.getElementById("guide").checked;
+    document.getElementById("boards").innerHTML = items.map(([k, s, label]) => `
+      <figure class="board">${A.keyringSVG(k, s, { id: "d", guide: guide && s === "back", name: nm || undefined })}
+        <figcaption><b>${label}</b><span>${k}-${s}.svg</span></figcaption></figure>`).join("");
+  }
+  document.getElementById("nm").addEventListener("input", draw);
+  document.getElementById("guide").addEventListener("change", draw);
+  draw();
+})();
+</script>
+</body>
+</html>
