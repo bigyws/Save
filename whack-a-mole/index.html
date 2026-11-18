@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>두더지 잡기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: one-screen garden — scoreboard strip on top, 3×3 lawn of holes, card overlays for start/result */
+:root {
+  --bg: #e6efd3;
+  --ink: #2c3a1e;
+  --muted: #5d6a49;
+  --card: #fffdf3;
+  --line: #c9d6ad;
+  --grass: #7db444;
+  --grass-2: #6ea53a;
+  --soil: #9b6a40;
+  --soil-dark: #6c4629;
+  --pit: #2a1c11;
+  --accent: #f2b705;
+  --accent-ink: #2c2100;
+  --good: #2f7d32;
+  --bad: #c3412f;
+  --gold: #e0a100;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131b11; --ink: #e8f0da; --muted: #a2b08c; --card: #1d2919; --line: #33452b;
+    --grass: #3b6129; --grass-2: #335624; --soil: #6e4b2e; --soil-dark: #4b321e; --pit: #0a0704;
+    --accent: #f5c542; --accent-ink: #2c2100; --good: #7bd17f; --bad: #ff7a68; --gold: #ffcc33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131b11; --ink: #e8f0da; --muted: #a2b08c; --card: #1d2919; --line: #33452b;
+  --grass: #3b6129; --grass-2: #335624; --soil: #6e4b2e; --soil-dark: #4b321e; --pit: #0a0704;
+  --accent: #f5c542; --accent-ink: #2c2100; --good: #7bd17f; --bad: #ff7a68; --gold: #ffcc33;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  min-height: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-block: 18px 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(28px, 7vw, 36px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+h1 small { display: block; font-family: var(--font-body); font-size: 13px; color: var(--muted); margin-top: 6px; letter-spacing: 0; }
+.sound {
+  font: inherit; font-size: 13px; color: var(--ink);
+  background: transparent; border: 1.5px solid var(--line); border-radius: 999px;
+  padding: 7px 12px; cursor: pointer; white-space: nowrap;
+}
+.sound:hover { border-color: var(--muted); }
+.sound:focus-visible, .btn:focus-visible, .hole:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* HUD */
+.hud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat {
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.stat .k { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.stat .v { font-family: var(--font-display); font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat .v.combo-hot { color: var(--bad); }
+.timebar { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.timebar > i { display: block; height: 100%; width: 100%; background: var(--good); transform-origin: left; transition: background-color .3s; }
+.timebar.low > i { background: var(--bad); }
+.timeline { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: -6px; }
+
+/* Lawn */
+.lawn-wrap { position: relative; }
+.lawn {
+  position: relative;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4%;
+  padding: 6%;
+  border-radius: 24px;
+  background:
+    repeating-linear-gradient(90deg, var(--grass) 0 12.5%, var(--grass-2) 12.5% 25%);
+  box-shadow: inset 0 -8px 0 rgba(0,0,0,.08);
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Crect x='19' y='14' width='6' height='28' rx='2' fill='%23a0703f' stroke='%233b2412' stroke-width='1.5'/%3E%3Crect x='4' y='3' width='36' height='14' rx='3' fill='%23c9473b' stroke='%233b2412' stroke-width='1.5'/%3E%3Crect x='4' y='3' width='6' height='14' rx='2' fill='%23e8e2d0' stroke='%233b2412' stroke-width='1.5'/%3E%3Crect x='34' y='3' width='6' height='14' rx='2' fill='%23e8e2d0' stroke='%233b2412' stroke-width='1.5'/%3E%3C/svg%3E") 22 10, pointer;
+  touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+.lawn.shake { animation: shake .35s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); } 40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); } 80% { transform: translateX(3px); }
+}
+.hole {
+  position: relative; aspect-ratio: 1; max-width: 100%;
+  border: 0; padding: 0; margin: 0; background: transparent; cursor: inherit;
+  border-radius: 16px;
+}
+.pit {
+  position: absolute; left: 8%; right: 8%; bottom: 6%; height: 28%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, var(--pit) 55%, var(--soil-dark) 100%);
+}
+.well { position: absolute; left: 16%; right: 16%; top: 0; bottom: 20%; overflow: hidden; }
+.critter {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 92%;
+  transform: translateY(105%);
+  transition: transform .16s cubic-bezier(.3,.8,.4,1.2);
+}
+.critter svg { width: 100%; height: 100%; display: block; }
+.hole.up .critter { transform: translateY(0); }
+.hole.hit .critter { transform: translateY(18%) scaleY(.82); transition: transform .08s; }
+.hole .x-eyes { display: none; }
+.hole.hit .x-eyes { display: inline; }
+.hole.hit .eyes { display: none; }
+.lip {
+  position: absolute; left: 4%; right: 4%; bottom: 2%; height: 19%;
+  background: var(--soil);
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  clip-path: ellipse(50% 100% at 50% 100%);
+  box-shadow: inset 0 -5px 0 var(--soil-dark);
+}
+.float {
+  position: absolute; left: 50%; top: 18%;
+  font-family: var(--font-display); font-size: clamp(18px, 5vw, 26px);
+  pointer-events: none; white-space: nowrap;
+  transform: translate(-50%, 0);
+  animation: rise .7s ease-out forwards;
+  text-shadow: 0 2px 0 rgba(0,0,0,.25);
+  color: #fff;
+}
+.float.neg { color: #ffd2c9; }
+.float.gold { color: #fff3b0; }
+@keyframes rise { to { transform: translate(-50%, -60%); opacity: 0; } }
+
+/* Overlay */
+.overlay {
+  position: absolute; inset: 0; border-radius: 24px;
+  display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(2px);
+}
+.card {
+  width: 100%; max-width: 360px;
+  background: var(--card); border: 1.5px solid var(--line); border-radius: 20px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+.card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; text-wrap: balance; }
+.rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rules li { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; }
+.rules svg { width: 40px; height: 40px; }
+.rules .pts { font-family: var(--font-display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.pts.plus { color: var(--good); } .pts.minus { color: var(--bad); } .pts.gold { color: var(--gold); }
+.hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.btn {
+  font-family: var(--font-display); font-size: 20px;
+  background: var(--accent); color: var(--accent-ink);
+  border: 0; border-radius: 14px; padding: 12px 16px; cursor: pointer;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000);
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 60%, #000); }
+.count { font-family: var(--font-display); font-size: 96px; color: #fff; text-shadow: 0 4px 0 rgba(0,0,0,.3); animation: pop .9s ease-out; }
+@keyframes pop { from { transform: scale(1.6); opacity: 0; } 30% { transform: scale(1); opacity: 1; } }
+.result-score { font-family: var(--font-display); font-size: 56px; line-height: 1; font-variant-numeric: tabular-nums; }
+.result-score small { font-size: 18px; color: var(--muted); margin-left: 4px; }
+.newbest { display: inline-block; font-size: 13px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 3px 10px; font-family: var(--font-display); }
+.breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.breakdown div { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px; text-align: center; }
+.breakdown b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.breakdown span { font-size: 12px; color: var(--muted); }
+.rank { margin: 0; font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .critter { transition-duration: .05s; }
+  .lawn.shake, .count, .float { animation-duration: .01s; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>두더지 잡기<small>30초 안에 최대한 많이 잡으세요</small></h1>
+    <button class="sound" id="sound" type="button" aria-pressed="true">소리 켜짐</button>
+  </header>
+
+  <section class="hud" aria-label="게임 현황">
+    <div class="stat"><span class="k">점수</span><span class="v" id="score">0</span></div>
+    <div class="stat"><span class="k">콤보</span><span class="v" id="combo">0</span></div>
+    <div class="stat"><span class="k">최고 기록</span><span class="v" id="best">0</span></div>
+  </section>
+  <div class="timebar" id="timebar"><i id="timefill"></i></div>
+  <div class="timeline"><span>남은 시간</span><span id="timeleft">30.0초</span></div>
+
+  <div class="lawn-wrap">
+    <div class="lawn" id="lawn"></div>
+
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <h2>잔디밭에 두더지가 나타났어요</h2>
+        <ul class="rules">
+          <li><span data-icon="mole"></span><span>두더지</span><span class="pts plus">+10</span></li>
+          <li><span data-icon="gold"></span><span>황금 두더지 (가끔 나와요)</span><span class="pts gold">+30</span></li>
+          <li><span data-icon="hedgehog"></span><span>고슴도치는 치지 마세요</span><span class="pts minus">−20</span></li>
+        </ul>
+        <p class="hint">연속으로 5마리를 잡으면 점수 2배, 10마리부터 3배예요. 놓치면 콤보가 끊겨요.<br>키보드: 숫자 키패드 7·8·9 / 4·5·6 / 1·2·3</p>
+        <button class="btn" id="startBtn" type="button">시작하기</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="countOverlay" hidden><div class="count" id="count">3</div></div>
+
+    <div class="overlay" id="resultOverlay" hidden>
+      <div class="card">
+        <h2 id="resultTitle">끝!</h2>
+        <div><span class="result-score" id="rScore">0<small>점</small></span> <span class="newbest" id="newBest" hidden>새 최고 기록</span></div>
+        <div class="breakdown">
+          <div><b id="rHits">0</b><span>잡은 두더지</span></div>
+          <div><b id="rMax">0</b><span>최대 콤보</span></div>
+          <div><b id="rAcc">0%</b><span>명중률</span></div>
+        </div>
+        <p class="rank" id="rRank"></p>
+        <button class="btn" id="againBtn" type="button">다시 하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DURATION = 30;
+  const KEYMAP = { "7":0,"8":1,"9":2,"4":3,"5":4,"6":5,"1":6,"2":7,"3":8,
+                   q:0,w:1,e:2,a:3,s:4,d:5,z:6,x:7,c:8 };
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Art ----------
+  function moleSVG(kind) {
+    if (kind === "hedgehog") {
+      let pts = [];
+      for (let k = 0; k <= 22; k++) {
+        const a = Math.PI + (Math.PI * k) / 22;
+        const r = k % 2 ? 30 : 46;
+        pts.push((50 + Math.cos(a) * r * 1.05).toFixed(1) + "," + (62 + Math.sin(a) * r).toFixed(1));
+      }
+      return `<svg viewBox="0 0 100 100" aria-hidden="true">
+        <polygon points="4,100 ${pts.join(" ")} 96,100" fill="#4a3d33"/>
+        <path d="M10 100 V62 a40 40 0 0 1 80 0 V100Z" fill="#6f5f52"/>
+        <ellipse cx="50" cy="72" rx="27" ry="28" fill="#ecd3ad"/>
+        <g class="eyes"><circle cx="40" cy="64" r="4" fill="#1c130c"/><circle cx="60" cy="64" r="4" fill="#1c130c"/>
+          <circle cx="41.3" cy="62.7" r="1.3" fill="#fff"/><circle cx="61.3" cy="62.7" r="1.3" fill="#fff"/></g>
+        <g class="x-eyes" stroke="#1c130c" stroke-width="2.6" stroke-linecap="round">
+          <path d="M36 60l8 8M44 60l-8 8M56 60l8 8M64 60l-8 8"/></g>
+        <ellipse cx="50" cy="76" rx="5" ry="4" fill="#1c130c"/>
+        <circle cx="33" cy="76" r="4" fill="#e99a8a" opacity=".6"/><circle cx="67" cy="76" r="4" fill="#e99a8a" opacity=".6"/>
+      </svg>`;
+    }
+    const c = kind === "gold"
+      ? { body: "#f0b323", belly: "#ffe28c", snout: "#fff0b8", shade: "#c98c00" }
+      : { body: "#8a5a3b", belly: "#c49473", snout: "#e8c3a2", shade: "#6b432a" };
+    const sparkle = kind === "gold"
+      ? `<path d="M18 30l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z" fill="#fff6c8"/>
+         <path d="M82 22l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="#fff6c8"/>` : "";
+    return `<svg viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M14 100 V56 a36 36 0 0 1 72 0 V100Z" fill="${c.body}"/>
+      <path d="M14 100 V56 a36 36 0 0 1 8-22 a40 40 0 0 0 -2 22 V100Z" fill="${c.shade}" opacity=".5"/>
+      <ellipse cx="50" cy="86" rx="23" ry="20" fill="${c.belly}"/>
+      <g class="eyes"><circle cx="38" cy="47" r="4.6" fill="#1f140d"/><circle cx="62" cy="47" r="4.6" fill="#1f140d"/>
+        <circle cx="39.6" cy="45.4" r="1.6" fill="#fff"/><circle cx="63.6" cy="45.4" r="1.6" fill="#fff"/></g>
+      <g class="x-eyes" stroke="#1f140d" stroke-width="2.8" stroke-linecap="round">
+        <path d="M34 43l8 8M42 43l-8 8M58 43l8 8M66 43l-8 8"/></g>
+      <ellipse cx="50" cy="61" rx="14" ry="10" fill="${c.snout}"/>
+      <ellipse cx="50" cy="55.5" rx="6" ry="4.4" fill="#e66b8b"/>
+      <rect x="45.5" y="66" width="9" height="7" rx="1.5" fill="#fff" stroke="#d8cfc2" stroke-width=".8"/>
+      <path d="M50 66v7" stroke="#d8cfc2" stroke-width=".8"/>
+      <circle cx="28" cy="58" r="4.5" fill="#f08f9e" opacity=".45"/><circle cx="72" cy="58" r="4.5" fill="#f08f9e" opacity=".45"/>
+      <path d="M22 100 q4-10 10-6 M78 100 q-4-10-10-6" stroke="${c.shade}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      ${sparkle}
+    </svg>`;
+  }
+  document.querySelectorAll("[data-icon]").forEach(el => { el.innerHTML = moleSVG(el.dataset.icon); });
+
+  // ---------- Board ----------
+  const lawn = $("lawn");
+  const holes = [];
+  for (let i = 0; i < 9; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "hole";
+    b.id = "hole-" + i;
+    b.setAttribute("aria-label", (i + 1) + "번 구멍");
+    b.innerHTML = '<div class="pit"></div><div class="well"><div class="critter"></div></div><div class="lip"></div>';
+    b.addEventListener("pointerdown", (e) => { e.preventDefault(); whack(i); });
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); whack(i); } });
+    lawn.appendChild(b);
+    holes.push({ el: b, critter: b.querySelector(".critter"), kind: null, up: false, hit: false, token: 0, timer: 0 });
+  }
+
+  // ---------- Sound ----------
+  let audio = null, soundOn = true;
+  function ensureAudio() {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { audio = null; } }
+    if (audio && audio.state === "suspended") audio.resume();
+  }
+  function tone(freq, dur, type = "sine", vol = 0.15, slide = 0, delay = 0) {
+    if (!soundOn || !audio) return;
+    const t = audio.currentTime + delay;
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  const sfx = {
+    pop: () => tone(520, 0.08, "sine", 0.05, 200),
+    hit: () => { tone(180, 0.12, "square", 0.12, -100); tone(760, 0.1, "triangle", 0.1, 300, 0.02); },
+    gold: () => [880, 1175, 1568].forEach((f, k) => tone(f, 0.18, "triangle", 0.1, 0, k * 0.06)),
+    ouch: () => { tone(140, 0.3, "sawtooth", 0.12, -60); },
+    tick: () => tone(660, 0.1, "square", 0.06),
+    go: () => tone(990, 0.25, "square", 0.08),
+    end: () => [784, 659, 523, 784].forEach((f, k) => tone(f, 0.22, "triangle", 0.1, 0, k * 0.13)),
+  };
+  $("sound").addEventListener("click", () => {
+    soundOn = !soundOn;
+    $("sound").textContent = soundOn ? "소리 켜짐" : "소리 꺼짐";
+    $("sound").setAttribute("aria-pressed", String(soundOn));
+    if (soundOn) ensureAudio();
+  });
+
+  // ---------- Storage ----------
+  function loadBest() { try { return Number(localStorage.getItem("whack-best") || 0) || 0; } catch (_) { return 0; } }
+  function saveBest(v) { try { localStorage.setItem("whack-best", String(v)); } catch (_) {} }
+
+  // ---------- State ----------
+  let running = false, score = 0, combo = 0, maxCombo = 0, hits = 0, swings = 0, best = loadBest();
+  let startAt = 0, spawnTimer = 0, rafId = 0, lastHole = -1;
+  $("best").textContent = best;
+
+  function render() {
+    $("score").textContent = score;
+    $("combo").textContent = combo >= 5 ? combo + " ×" + (combo >= 10 ? 3 : 2) : combo;
+    $("combo").classList.toggle("combo-hot", combo >= 5);
+  }
+
+  const lerp = (a, b, t) => a + (b - a) * Math.min(1, Math.max(0, t));
+
+  function pickKind(elapsed) {
+    const r = Math.random();
+    if (r < 0.07) return "gold";
+    if (elapsed > 4 && r < 0.07 + lerp(0.10, 0.20, elapsed / DURATION)) return "hedgehog";
+    return "mole";
+  }
+
+  function show(i, kind, upTime) {
+    const h = holes[i];
+    h.kind = kind; h.up = true; h.hit = false; h.token++;
+    h.critter.innerHTML = moleSVG(kind);
+    h.el.classList.remove("hit");
+    h.el.classList.add("up");
+    sfx.pop();
+    const tok = h.token;
+    h.timer = setTimeout(() => { if (h.token === tok) retreat(i, false); }, upTime);
+  }
+
+  function retreat(i, wasHit) {
+    const h = holes[i];
+    if (!h.up) return;
+    if (!wasHit && running && h.kind !== "hedgehog") { combo = 0; render(); }
+    h.up = false;
+    h.el.classList.remove("up");
+    const tok = ++h.token;
+    setTimeout(() => { if (h.token === tok) { h.el.classList.remove("hit"); h.kind = null; } }, 200);
+  }
+
+  function spawnLoop() {
+    if (!running) return;
+    const elapsed = (performance.now() - startAt) / 1000;
+    const p = elapsed / DURATION;
+    const free = holes.map((h, i) => i).filter(i => !holes[i].up && holes[i].kind === null && i !== lastHole);
+    const count = elapsed > 10 && Math.random() < lerp(0.15, 0.4, p) ? 2 : 1;
+    for (let n = 0; n < count && free.length; n++) {
+      const idx = free.splice(Math.floor(Math.random() * free.length), 1)[0];
+      const kind = pickKind(elapsed);
+      const upTime = lerp(1150, 640, p) * (kind === "gold" ? 0.75 : 1);
+      show(idx, kind, upTime);
+      lastHole = idx;
+    }
+    spawnTimer = setTimeout(spawnLoop, lerp(820, 430, p) * (0.8 + Math.random() * 0.4));
+  }
+
+  function floatText(i, text, cls) {
+    const s = document.createElement("span");
+    s.className = "float " + cls;
+    s.textContent = text;
+    holes[i].el.appendChild(s);
+    setTimeout(() => s.remove(), 750);
+  }
+
+  function whack(i) {
+    if (!running) return;
+    ensureAudio();
+    swings++;
+    const h = holes[i];
+    if (!h.up || h.hit) return;
+    h.hit = true;
+    clearTimeout(h.timer);
+    h.el.classList.add("hit");
+    if (h.kind === "hedgehog") {
+      combo = 0;
+      score = Math.max(0, score - 20);
+      floatText(i, "−20 아야!", "neg");
+      sfx.ouch();
+      lawn.classList.remove("shake"); void lawn.offsetWidth; lawn.classList.add("shake");
+    } else {
+      combo++; hits++;
+      maxCombo = Math.max(maxCombo, combo);
+      const mult = combo >= 10 ? 3 : combo >= 5 ? 2 : 1;
+      const pts = (h.kind === "gold" ? 30 : 10) * mult;
+      score += pts;
+      floatText(i, "+" + pts, h.kind === "gold" ? "gold" : "");
+      h.kind === "gold" ? sfx.gold() : sfx.hit();
+    }
+    render();
+    const tok = h.token;
+    setTimeout(() => { if (h.token === tok) retreat(i, true); }, 320);
+  }
+
+  function tickTime() {
+    const left = Math.max(0, DURATION - (performance.now() - startAt) / 1000);
+    $("timefill").style.transform = "scaleX(" + (left / DURATION) + ")";
+    $("timeleft").textContent = left.toFixed(1) + "초";
+    $("timebar").classList.toggle("low", left <= 5);
+    if (left <= 0) { endGame(); return; }
+    rafId = requestAnimationFrame(tickTime);
+  }
+
+  function resetBoard() {
+    holes.forEach(h => { clearTimeout(h.timer); h.token++; h.up = false; h.hit = false; h.kind = null; h.el.classList.remove("up", "hit"); });
+  }
+
+  function countdown() {
+    ensureAudio();
+    $("startOverlay").hidden = true;
+    $("resultOverlay").hidden = true;
+    $("countOverlay").hidden = false;
+    score = 0; combo = 0; maxCombo = 0; hits = 0; swings = 0; lastHole = -1;
+    render(); resetBoard();
+    $("timefill").style.transform = "scaleX(1)";
+    $("timeleft").textContent = DURATION.toFixed(1) + "초";
+    $("timebar").classList.remove("low");
+    let n = 3;
+    const step = () => {
+      const el = $("count");
+      el.textContent = n > 0 ? n : "시작!";
+      el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+      n > 0 ? sfx.tick() : sfx.go();
+      if (n-- > 0) setTimeout(step, 700);
+      else setTimeout(startGame, 450);
+    };
+    step();
+  }
+
+  function startGame() {
+    $("countOverlay").hidden = true;
+    running = true;
+    startAt = performance.now();
+    spawnLoop();
+    rafId = requestAnimationFrame(tickTime);
+  }
+
+  function rankText(s) {
+    if (s >= 600) return "두더지들이 이사를 고민하고 있어요. 전설의 망치꾼!";
+    if (s >= 400) return "잔디밭의 수호자예요. 손이 정말 빨라요.";
+    if (s >= 250) return "꽤 잘했어요! 콤보를 이어가면 더 올라가요.";
+    if (s >= 120) return "몸이 풀렸어요. 한 판 더 해볼까요?";
+    return "두더지들이 아직 여유로워 보여요. 다시 도전!";
+  }
+
+  function endGame() {
+    running = false;
+    clearTimeout(spawnTimer);
+    cancelAnimationFrame(rafId);
+    holes.forEach((h, i) => { clearTimeout(h.timer); retreat(i, true); });
+    sfx.end();
+    const isBest = score > best;
+    if (isBest) { best = score; saveBest(best); $("best").textContent = best; }
+    setTimeout(() => {
+      $("rScore").innerHTML = score + "<small>점</small>";
+      $("newBest").hidden = !isBest;
+      $("rHits").textContent = hits;
+      $("rMax").textContent = maxCombo;
+      $("rAcc").textContent = (swings ? Math.round((hits / swings) * 100) : 0) + "%";
+      $("rRank").textContent = rankText(score);
+      $("resultTitle").textContent = isBest ? "최고 기록 달성!" : "시간 종료!";
+      $("resultOverlay").hidden = false;
+      $("againBtn").focus({ preventScroll: true });
+    }, 500);
+  }
+
+  $("startBtn").addEventListener("click", countdown);
+  $("againBtn").addEventListener("click", countdown);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (running) {
+      const i = KEYMAP[e.key.toLowerCase()];
+      if (i !== undefined) { e.preventDefault(); whack(i); }
+    }
+  });
+})();
+</script>
+</body>
+</html>
