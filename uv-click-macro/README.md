@@ -6,13 +6,18 @@ UV 인쇄기 프로그램에서 매번 하는 "이동 → 클릭 → 이동 → 
 
 ![화면](screenshot.png)
 
-## 설치 (처음 한 번)
+## 다운로드 (설치 없이 바로 실행 — 추천)
+
+[릴리스 페이지](https://github.com/bigyws/Save/releases/tag/uv-click-macro-latest)에서 **`UV-Click-Macro.exe`** 를 받아 더블클릭하면 됩니다. Python 설치가 필요 없습니다.
+exe를 바탕화면의 전용 폴더(예: `UV자동화`)에 두고 쓰세요. 작업은 exe 옆 `macros` 폴더에 저장됩니다.
+
+## 직접 설치해서 실행 (Python 사용)
 
 1. https://www.python.org 에서 Python 설치 — 설치 첫 화면에서 **"Add python.exe to PATH" 체크**
 2. 이 폴더에서 `1_install.bat` 더블클릭
 3. 이후로는 `2_run.bat` 더블클릭으로 실행
 
-> 파이썬 없는 다른 PC에서 쓰려면 `3_make_exe.bat` → 생기는 `dist\UV클릭자동화.exe` 하나만 복사하면 됩니다.
+> 파이썬 없는 다른 PC에서 쓰려면 `3_make_exe.bat` → 생기는 `dist\UV-Click-Macro.exe` 하나만 복사하면 됩니다.
 
 ## 사용법
 

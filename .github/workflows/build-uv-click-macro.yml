@@ -1,0 +1,52 @@
+name: Build UV click macro (Windows exe)
+
+on:
+  push:
+    paths:
+      - "uv-click-macro/**"
+      - ".github/workflows/build-uv-click-macro.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: uv-click-macro
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller==6.11.1
+
+      - name: Build exe
+        run: python -m PyInstaller --noconfirm --onefile --windowed --name UV-Click-Macro macro_app.py
+
+      - name: Check exe exists
+        shell: pwsh
+        run: Get-Item dist/UV-Click-Macro.exe | Format-List Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UV-Click-Macro
+          path: uv-click-macro/dist/UV-Click-Macro.exe
+
+      - name: Publish to release page
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: uv-click-macro-latest
+          name: UV 인쇄 클릭 자동화 (exe)
+          target_commitish: ${{ github.sha }}
+          body: |
+            UV-Click-Macro.exe 를 받아서 더블클릭하면 바로 실행됩니다 (Python 설치 필요 없음).
+            저장한 작업은 exe 옆의 macros 폴더에 저장되므로, exe 를 바탕화면이나 전용 폴더에 두고 쓰세요.
+          files: uv-click-macro/dist/UV-Click-Macro.exe
