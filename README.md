@@ -13,3 +13,7 @@
 ## 콕태그 NFC 추억 키링 (`nfc-keyring/`)
 
 강아지·고양이 NFC 키링 디자인, 판매 페이지(웹 스타일), 추억 앨범, 앱 스타일 버전입니다. 자세한 내용은 [`nfc-keyring/README.md`](nfc-keyring/README.md)를 보세요.
+
+## UV 인쇄 클릭 자동화 (`uv-click-macro/`)
+
+UV 인쇄기 프로그램의 반복 클릭(이동→클릭→대기→…)을 작업별로 저장해 두고 F9 한 번으로 실행하는 윈도우용 프로그램입니다. 자세한 내용은 [`uv-click-macro/README.md`](uv-click-macro/README.md)를 보세요.
