@@ -42,7 +42,7 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-APP_TITLE = "UV 인쇄 클릭 자동화 [원식만듬]"
+APP_TITLE = "UV 인쇄 클릭 자동화 [made by. 양원식]"
 COMPANY = "신신기획"
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)
@@ -424,7 +424,7 @@ class MacroApp:
                      font=("맑은 고딕", 20, "bold")).pack(side="left", padx=(0, 14))
         tk.Label(head, text="UV 인쇄 클릭 자동화", bg=BG, fg="#222",
                  font=("맑은 고딕", 18, "bold")).pack(side="left")
-        tk.Label(head, text="[원식만듬]", bg=BG, fg="#777",
+        tk.Label(head, text="[made by. 양원식]", bg=BG, fg="#777",
                  font=("맑은 고딕", 12, "bold")).pack(side="left", padx=(8, 0), pady=(6, 0))
 
     def _build_bottom(self):
