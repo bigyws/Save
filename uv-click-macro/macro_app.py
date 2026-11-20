@@ -9,7 +9,7 @@ UV 인쇄기 클릭 자동화 (클릭 매크로)
 
 단축키 (다른 프로그램이 앞에 있어도 동작)
   F8  : 지금 마우스가 있는 위치를 '클릭' 단계로 추가
-  F12 : 마우스 위치에 END 표시 / 같은 위치에서 다시 누르면 END 해제
+  F12 : 단계에 END 표시 / 다시 누르면 END 해제 (단계 번호는 추가되지 않음)
   F9  : 시작
   F10 : 정지 (녹화 중이면 녹화 종료)
   ESC : 실행 중일 때 정지
@@ -670,33 +670,30 @@ class MacroApp:
                 self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F10" if is_end(last)
                                 else "녹화 중… 방금 클릭의 END 를 없앴습니다. 끝나면 F10")
             return
+        if not steps:
+            self.status.set("단계가 없습니다. 먼저 F8 로 클릭 위치를 추가하세요.")
+            return
+        # 어느 단계에 END 를 붙일지: ① 마우스 근처 단계 ② 목록에서 선택한 단계 ③ 마지막 단계
         x, y = pyautogui.position()
         near = [i for i, st in enumerate(steps)
-                if st["type"] in POSITION_TYPES and abs(st["x"] - x) <= 10 and abs(st["y"] - y) <= 10]
+                if st["type"] in POSITION_TYPES and abs(st["x"] - x) <= 20 and abs(st["y"] - y) <= 20]
+        sel = self._selected()
         if near:
-            sel = [i for i in self._selected() if i in near]
-            i = sel[0] if sel else near[-1]
-            st = steps[i]
-            if is_end(st):
-                if st.get("f12"):
-                    # F12 로 새로 만든 단계였으면 단계째 없애기
-                    del steps[i]
-                    self._mark_dirty()
-                    self._refresh_tree(select=[min(i, len(steps) - 1)])
-                    self.status.set(f"({x}, {y}) END 단계를 없앴습니다.")
-                    return
-                st["memo"] = ""
-                self.status.set(f"{i + 1}번 단계 ({st['x']}, {st['y']}) 의 END 를 없앴습니다.")
-            else:
-                st["memo"] = "END"
-                self.status.set(f"{i + 1}번 단계 ({st['x']}, {st['y']}) 를 END 로 표시 — 실행되면 카운터 +1번")
-            self._mark_dirty()
-            self._refresh_tree(select=[i])
-            return
-        step = new_step("click", x, y, delay=0.5, memo="END")
-        step["f12"] = True
-        self._insert_step(step)
-        self.status.set(f"END 클릭 위치 추가: ({x}, {y})  — 같은 위치에서 F12 를 다시 누르면 없어집니다.")
+            pick = [i for i in sel if i in near]
+            i = pick[0] if pick else near[-1]
+        elif sel:
+            i = sel[0]
+        else:
+            i = len(steps) - 1
+        st = steps[i]
+        if is_end(st):
+            st["memo"] = ""
+            self.status.set(f"{i + 1}번 단계의 END 를 없앴습니다.")
+        else:
+            st["memo"] = "END"
+            self.status.set(f"{i + 1}번 단계를 END 로 표시 — 실행되면 카운터 +1번 (F12 다시 누르면 해제)")
+        self._mark_dirty()
+        self._refresh_tree(select=[i])
 
     def _add_step(self):
         x, y = pyautogui.position()
