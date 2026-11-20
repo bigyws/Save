@@ -296,6 +296,7 @@ class MacroApp:
         self.pause_event = threading.Event()
         self.settings = load_settings()
         self.count = int(self.settings.get("count", 0))
+        self.extra = int(self.settings.get("extra", 0))   # 총 장수 직접 조정분 (＋/－장)
         self.count_paused = False
 
         self.macro = {"name": "", "repeat": 1, "start_wait": 2.0, "per_plate": 1, "steps": []}
@@ -532,6 +533,10 @@ class MacroApp:
                            command=lambda: self._add_count(1, manual=True)),
                 ttk.Button(row2, text="－1번", style="Cnt.TButton",
                            command=lambda: self._add_count(-1, manual=True)),
+                ttk.Button(row2, text="＋1장", style="Cnt.TButton",
+                           command=lambda: self._add_extra(1)),
+                ttk.Button(row2, text="－1장", style="Cnt.TButton",
+                           command=lambda: self._add_extra(-1)),
                 self.count_pause_btn,
                 ttk.Button(row2, text="↺ 리셋", style="Cnt.TButton", command=self._reset_count))
         for col, b in enumerate(btns):
@@ -565,8 +570,19 @@ class MacroApp:
     def _update_count_display(self):
         n = self._per_plate()
         self.plates_var.set(f"{self.count:,} 번")
-        self.total_var.set(f"{self.count * n:,} 장")
+        self.total_var.set(f"{self._total():,} 장")
         self._update_count_rule()
+
+    def _total(self):
+        return max(0, self.count * self._per_plate() + self.extra)
+
+    def _add_extra(self, n):
+        """총 소재 수량만 ＋/－ (불량·추가분 등)"""
+        base = self.count * self._per_plate()
+        self.extra = max(-base, self.extra + n)      # 총 장수가 0 밑으로 안 내려가게
+        self.settings["extra"] = self.extra
+        save_settings(self.settings)
+        self._update_count_display()
 
     def _update_count_rule(self):
         if self.count_paused:
@@ -593,12 +609,13 @@ class MacroApp:
         self._update_count_rule()
 
     def _reset_count(self):
-        if self.count and not messagebox.askyesno(
-                APP_TITLE, f"카운터 {self.count}번 ({self.count * self._per_plate()}장)을 "
-                           "0으로 되돌릴까요?"):
+        if (self.count or self.extra) and not messagebox.askyesno(
+                APP_TITLE, f"카운터 {self.count}번 ({self._total()}장)을 0으로 되돌릴까요?"):
             return
         self.count = 0
+        self.extra = 0
         self.settings["count"] = 0
+        self.settings["extra"] = 0
         save_settings(self.settings)
         self._update_count_display()
 
