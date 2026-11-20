@@ -117,7 +117,7 @@ def save_settings(data):
 
 
 def is_end(step):
-    """메모가 END 인 단계 → 한 판이 끝난 것으로 보고 카운터 +1"""
+    """메모가 END 인 단계 → 한 번이 끝난 것으로 보고 카운터 +1"""
     return step.get("memo", "").strip().upper() == "END"
 
 
@@ -193,7 +193,7 @@ class StepDialog(tk.Toplevel):
         self.memo = tk.StringVar(value=self.step["memo"])
         ttk.Entry(frm, textvariable=self.memo, width=28).grid(
             row=6, column=1, columnspan=2, sticky="w", **pad)
-        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1판",
+        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1번",
                   foreground="#b00020").grid(row=7, column=1, columnspan=2, sticky="w", padx=6)
 
         btns = ttk.Frame(frm)
@@ -444,12 +444,12 @@ class MacroApp:
         box = ttk.LabelFrame(parent, text=" 생산 카운터 ", padding=8)
         box.pack(fill="both", expand=True)
 
-        # 검은 화면: 판 수 / 총 수량
+        # 검은 화면: 번 수 / 총 수량
         BG, FG, FG2 = "#10261c", "#4dff9a", "#b9f5d0"
         panel = tk.Frame(box, bg=BG, padx=16, pady=6)
         panel.pack(fill="x")
         self.count_widgets = []
-        for col, (title, attr) in enumerate((("완료 판 수", "plates_var"),
+        for col, (title, attr) in enumerate((("완료 횟수", "plates_var"),
                                              ("총 소재 수량", "total_var"))):
             cell = tk.Frame(panel, bg=BG)
             cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 20, 0))
@@ -466,10 +466,10 @@ class MacroApp:
                                       font=("맑은 고딕", 13, "bold"))
         self.formula_label.grid(row=1, column=0, columnspan=2, pady=(2, 0))
 
-        # 한판 소재 수량 + 세는 방법 안내
+        # 한 번 소재 수량 + 세는 방법 안내
         row1 = ttk.Frame(box)
         row1.pack(fill="x", pady=(8, 4))
-        ttk.Label(row1, text="한 판에 소재", font=("맑은 고딕", 11, "bold")).pack(side="left")
+        ttk.Label(row1, text="한 번에 소재", font=("맑은 고딕", 11, "bold")).pack(side="left")
         self.per_plate_var = tk.StringVar(value="1")
         ttk.Spinbox(row1, from_=1, to=9999, textvariable=self.per_plate_var, width=6,
                     font=("맑은 고딕", 12, "bold"), justify="center",
@@ -484,9 +484,9 @@ class MacroApp:
         row2.pack(fill="x")
         self.count_pause_btn = ttk.Button(row2, text="일시정지", style="Cnt.TButton",
                                           command=self._toggle_count_pause)
-        btns = (ttk.Button(row2, text="＋1판", style="Cnt.TButton",
+        btns = (ttk.Button(row2, text="＋1번", style="Cnt.TButton",
                            command=lambda: self._add_count(1, manual=True)),
-                ttk.Button(row2, text="－1판", style="Cnt.TButton",
+                ttk.Button(row2, text="－1번", style="Cnt.TButton",
                            command=lambda: self._add_count(-1, manual=True)),
                 self.count_pause_btn,
                 ttk.Button(row2, text="↺ 리셋", style="Cnt.TButton", command=self._reset_count))
@@ -520,18 +520,18 @@ class MacroApp:
 
     def _update_count_display(self):
         n = self._per_plate()
-        self.plates_var.set(f"{self.count:,} 판")
+        self.plates_var.set(f"{self.count:,} 번")
         self.total_var.set(f"{self.count * n:,} 장")
-        self.formula_var.set(f"소재 {n:,}장 × {self.count:,}판 = {self.count * n:,}장")
+        self.formula_var.set(f"소재 {n:,}장 × {self.count:,}번 = {self.count * n:,}장")
         self._update_count_rule()
 
     def _update_count_rule(self):
         if self.count_paused:
             text, color = "일시정지 — 자동으로 세지 않음 (＋1/－1은 가능)", "#b36b00"
         elif any(is_end(s) for s in self.macro["steps"]):
-            text, color = "▶ 메모가 END 인 단계가 실행되면 +1판", "#1b7a3d"
+            text, color = "▶ 메모가 END 인 단계가 실행되면 +1번", "#1b7a3d"
         else:
-            text, color = "▶ END 메모가 없어서 1회 반복이 끝날 때마다 +1판", "#1b7a3d"
+            text, color = "▶ END 메모가 없어서 1회 반복이 끝날 때마다 +1번", "#1b7a3d"
         self.count_state.config(text=text, foreground=color)
 
     def _add_count(self, n, manual=False):
@@ -551,7 +551,7 @@ class MacroApp:
 
     def _reset_count(self):
         if self.count and not messagebox.askyesno(
-                APP_TITLE, f"카운터 {self.count}판 ({self.count * self._per_plate()}장)을 "
+                APP_TITLE, f"카운터 {self.count}번 ({self.count * self._per_plate()}장)을 "
                            "0으로 되돌릴까요?"):
             return
         self.count = 0
@@ -966,7 +966,7 @@ class MacroApp:
                                    f'{STEP_TYPES.get(s["type"])} {s["memo"]}'))
                     self._do_step(s, move)
                     if is_end(s):
-                        put(("count", 1))   # 메모가 END → 한 판 끝, 카운터 +1
+                        put(("count", 1))   # 메모가 END → 한 번 끝, 카운터 +1
                     if s["delay"] > 0:
                         self._sleep(s["delay"])
                 if not has_end:
