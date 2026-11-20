@@ -9,6 +9,7 @@ UV 인쇄기 클릭 자동화 (클릭 매크로)
 
 단축키 (다른 프로그램이 앞에 있어도 동작)
   F8  : 지금 마우스가 있는 위치를 '클릭' 단계로 추가
+  F12 : 지금 마우스 위치를 END 클릭 단계로 추가 (녹화 중이면 방금 클릭을 END 로)
   F9  : 시작
   F10 : 정지 (녹화 중이면 녹화 종료)
   ESC : 실행 중일 때 정지
@@ -207,7 +208,7 @@ class StepDialog(tk.Toplevel):
         self.memo = tk.StringVar(value=self.step["memo"])
         ttk.Entry(frm, textvariable=self.memo, width=28).grid(
             row=6, column=1, columnspan=2, sticky="w", **pad)
-        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1번",
+        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1번 (F12 로 추가해도 END)",
                   foreground="#b00020").grid(row=7, column=1, columnspan=2, sticky="w", padx=6)
 
         btns = ttk.Frame(frm)
@@ -375,6 +376,7 @@ class MacroApp:
         self.tree.pack(side="left", fill="both", expand=True)
         for text, cmd in (
             ("위치 추가 (F8)", self._add_current_position),
+            ("END 위치 추가 (F12)", lambda: self._add_current_position(end=True)),
             ("단계 직접 추가", self._add_step),
             ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기"))),
             ("수정", self._edit_step),
@@ -645,14 +647,23 @@ class MacroApp:
         self._refresh_tree(select=[idx])
 
     # ------------------------------------------------------------ 단계 편집
-    def _add_current_position(self):
+    def _add_current_position(self, end=False):
         if self.running:
             return
-        x, y = pyautogui.position()
         if self.recording:
+            if end and self.macro["steps"]:
+                # 녹화 중 F12 → 방금 녹화한 클릭을 END 로 표시
+                self.macro["steps"][-1]["memo"] = "END"
+                self._mark_dirty()
+                self._refresh_tree(select=[len(self.macro["steps"]) - 1])
+                self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F10")
             return
-        self._insert_step(new_step("click", x, y, delay=0.5))
-        self.status.set(f"클릭 위치 추가: ({x}, {y})  — 메모를 적어두면 나중에 알아보기 쉽습니다.")
+        x, y = pyautogui.position()
+        self._insert_step(new_step("click", x, y, delay=0.5, memo="END" if end else ""))
+        if end:
+            self.status.set(f"END 클릭 위치 추가: ({x}, {y})  — 이 단계가 실행되면 카운터 +1번")
+        else:
+            self.status.set(f"클릭 위치 추가: ({x}, {y})  — 메모를 적어두면 나중에 알아보기 쉽습니다.")
 
     def _add_step(self):
         x, y = pyautogui.position()
@@ -831,6 +842,8 @@ class MacroApp:
                 return
             if key == keyboard.Key.f8:
                 self.events.put(("hotkey", "add"))
+            elif key == keyboard.Key.f12:
+                self.events.put(("hotkey", "add_end"))
             elif key == keyboard.Key.f9:
                 self.events.put(("hotkey", "start"))
             elif key == keyboard.Key.f10:
@@ -852,6 +865,8 @@ class MacroApp:
                 if ev == "hotkey":
                     if arg == "add":
                         self._add_current_position()
+                    elif arg == "add_end":
+                        self._add_current_position(end=True)
                     elif arg == "start":
                         self.start()
                     elif arg == "pause":
