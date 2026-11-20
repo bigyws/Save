@@ -87,6 +87,7 @@ def load_macro(name):
              for s in data.get("steps", [])]
     return {"name": name, "repeat": int(data.get("repeat", 1)),
             "start_wait": float(data.get("start_wait", 2)),
+            "per_plate": max(1, int(data.get("per_plate", 1))),
             "steps": steps}
 
 
@@ -95,6 +96,7 @@ def save_macro(macro):
     path = os.path.join(MACRO_DIR, safe_filename(macro["name"]) + ".json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"repeat": macro["repeat"], "start_wait": macro["start_wait"],
+                   "per_plate": macro.get("per_plate", 1),
                    "steps": macro["steps"]}, f, ensure_ascii=False, indent=2)
 
 
@@ -114,39 +116,31 @@ def save_settings(data):
         pass
 
 
-def calc_eval(expr):
-    """계산기용 안전한 계산 (+ - * / 와 숫자만 허용)"""
-    import ast
-    import operator
-    expr = expr.replace("×", "*").replace("÷", "/").replace(",", "")
-    if not re.fullmatch(r"[0-9+\-*/.() ]+", expr):
-        raise ValueError("bad")
-    expr = expr.rstrip("+-*/ ")
-    ops = {ast.Add: operator.add, ast.Sub: operator.sub,
-           ast.Mult: operator.mul, ast.Div: operator.truediv,
-           ast.USub: operator.neg, ast.UAdd: operator.pos}
-
-    def ev(node):
-        if isinstance(node, ast.Expression):
-            return ev(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return node.value
-        if isinstance(node, ast.BinOp) and type(node.op) in ops:
-            return ops[type(node.op)](ev(node.left), ev(node.right))
-        if isinstance(node, ast.UnaryOp) and type(node.op) in ops:
-            return ops[type(node.op)](ev(node.operand))
-        raise ValueError("bad")
-
-    return ev(ast.parse(expr or "0", mode="eval"))
+def is_end(step):
+    """메모가 END 인 단계 → 한 판이 끝난 것으로 보고 카운터 +1"""
+    return step.get("memo", "").strip().upper() == "END"
 
 
-def format_number(v):
-    if isinstance(v, float):
-        if v.is_integer() and abs(v) < 1e15:
-            v = int(v)
-        else:
-            return f"{v:.10g}"
-    return str(v)
+def play_alarm(kind="done"):
+    """끝났을 때 소리 알림 (따로 실행되어 프로그램이 멈추지 않음)"""
+    def run():
+        try:
+            import winsound
+            if kind == "done":
+                for _ in range(2):
+                    for f in (880, 1175, 1568):
+                        winsound.Beep(f, 160)
+                    time.sleep(0.15)
+            else:
+                for _ in range(3):
+                    winsound.Beep(440, 400)
+                    time.sleep(0.1)
+        except Exception:
+            try:
+                print("\a", end="", flush=True)
+            except Exception:
+                pass
+    threading.Thread(target=run, daemon=True).start()
 
 
 class StepDialog(tk.Toplevel):
@@ -199,9 +193,11 @@ class StepDialog(tk.Toplevel):
         self.memo = tk.StringVar(value=self.step["memo"])
         ttk.Entry(frm, textvariable=self.memo, width=28).grid(
             row=6, column=1, columnspan=2, sticky="w", **pad)
+        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1판",
+                  foreground="#b00020").grid(row=7, column=1, columnspan=2, sticky="w", padx=6)
 
         btns = ttk.Frame(frm)
-        btns.grid(row=7, column=0, columnspan=3, pady=(10, 0))
+        btns.grid(row=8, column=0, columnspan=3, pady=(10, 0))
         ttk.Button(btns, text="확인", command=self._ok).pack(side="left", padx=4)
         ttk.Button(btns, text="취소", command=self.destroy).pack(side="left", padx=4)
 
@@ -287,7 +283,7 @@ class MacroApp:
         self.count = int(self.settings.get("count", 0))
         self.count_paused = False
 
-        self.macro = {"name": "", "repeat": 1, "start_wait": 2.0, "steps": []}
+        self.macro = {"name": "", "repeat": 1, "start_wait": 2.0, "per_plate": 1, "steps": []}
 
         self._build_ui()
         self._start_hotkeys()
@@ -349,6 +345,7 @@ class MacroApp:
             self.tree.heading(c, text=text)
             self.tree.column(c, width=w, anchor="center" if c != "memo" else "w",
                              stretch=(c == "memo"))
+        self.tree.tag_configure("end", background="#ffe1e1", foreground="#b00020")
         self.tree.tag_configure("current", background="#ffe58a")
         sb = ttk.Scrollbar(mid, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=sb.set)
@@ -379,9 +376,7 @@ class MacroApp:
     def _build_bottom(self):
         style = ttk.Style()
         style.configure("Pause.TButton", font=("맑은 고딕", 12, "bold"), padding=8)
-        style.configure("Calc.TButton", font=("맑은 고딕", 12, "bold"), padding=(2, 4))
-        style.configure("Op.TButton", font=("맑은 고딕", 12, "bold"), padding=(2, 4),
-                        foreground="#1a4fa0")
+        style.configure("Cnt.TButton", font=("맑은 고딕", 11, "bold"), padding=(4, 6))
 
         # 맨 아래 상태줄
         self.status = tk.StringVar(value="준비")
@@ -389,11 +384,10 @@ class MacroApp:
                                     anchor="w", padding=(8, 3))
         self.status_bar.pack(fill="x", side="bottom")
 
-        # 카운터 + 계산기
+        # 생산 카운터
         self.tools = ttk.Frame(self.root, padding=(10, 0, 10, 6))
         self.tools.pack(fill="x", side="bottom")
         self._build_counter(self.tools)
-        self._build_calculator(self.tools)
 
         # 실행 버튼 줄
         run = ttk.Frame(self.root, padding=(10, 4, 10, 8))
@@ -425,9 +419,17 @@ class MacroApp:
         ttk.Combobox(opt, textvariable=self.speed_var, state="readonly", width=6,
                      values=["빠름", "보통", "느림"]).pack(side="left", padx=4)
         self.show_tools = tk.BooleanVar(value=self.settings.get("show_tools", True))
-        ttk.Checkbutton(opt, text="카운터·계산기 보기", variable=self.show_tools,
+        ttk.Checkbutton(opt, text="카운터 보기", variable=self.show_tools,
                         command=self._apply_show_tools).pack(side="right")
+        self.sound_on = tk.BooleanVar(value=self.settings.get("sound", True))
+        ttk.Checkbutton(opt, text="끝나면 소리 알림", variable=self.sound_on,
+                        command=self._save_sound_option).pack(side="right", padx=(0, 12))
         self._apply_show_tools()
+
+    def _save_sound_option(self):
+        self.settings["sound"] = bool(self.sound_on.get())
+        if self.sound_on.get():
+            play_alarm("done")      # 어떤 소리인지 한 번 들려주기
 
     def _apply_show_tools(self):
         if self.show_tools.get():
@@ -440,128 +442,122 @@ class MacroApp:
     # ------------------------------------------------------------ 카운터
     def _build_counter(self, parent):
         box = ttk.LabelFrame(parent, text=" 생산 카운터 ", padding=8)
-        box.pack(side="left", fill="both", expand=True, padx=(0, 8))
-        self.count_var = tk.StringVar(value=str(self.count))
-        self.count_label = tk.Label(box, textvariable=self.count_var, font=("맑은 고딕", 40, "bold"),
-                                    bg="#10261c", fg="#4dff9a", anchor="e", padx=14, width=7)
-        self.count_label.pack(fill="x")
-        self.count_state = ttk.Label(box, text="▶ 세는 중 — 1회 반복이 끝날 때마다 +1",
-                                     foreground="#1b7a3d")
-        self.count_state.pack(anchor="w", pady=(4, 6))
-        row = ttk.Frame(box)
-        row.pack(fill="x")
-        self.count_pause_btn = ttk.Button(row, text="일시정지", command=self._toggle_count_pause)
-        btns = (("＋1", lambda: self._add_count(1, manual=True)),
-                ("－1", lambda: self._add_count(-1, manual=True)),
-                (None, None),
-                ("↺ 리셋", self._reset_count))
-        col = 0
-        for text, cmd in btns:
-            b = self.count_pause_btn if text is None else ttk.Button(row, text=text, command=cmd)
+        box.pack(fill="both", expand=True)
+
+        # 검은 화면: 판 수 / 총 수량
+        BG, FG, FG2 = "#10261c", "#4dff9a", "#b9f5d0"
+        panel = tk.Frame(box, bg=BG, padx=16, pady=6)
+        panel.pack(fill="x")
+        self.count_widgets = []
+        for col, (title, attr) in enumerate((("완료 판 수", "plates_var"),
+                                             ("총 소재 수량", "total_var"))):
+            cell = tk.Frame(panel, bg=BG)
+            cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 20, 0))
+            panel.columnconfigure(col, weight=1, uniform="cnt")
+            tk.Label(cell, text=title, bg=BG, fg=FG2, font=("맑은 고딕", 10)).pack(anchor="w")
+            var = tk.StringVar()
+            setattr(self, attr, var)
+            lbl = tk.Label(cell, textvariable=var, bg=BG, fg=FG, anchor="e",
+                           font=("맑은 고딕", 34, "bold"))
+            lbl.pack(fill="x")
+            self.count_widgets.append(lbl)
+        self.formula_var = tk.StringVar()
+        self.formula_label = tk.Label(panel, textvariable=self.formula_var, bg=BG, fg=FG2,
+                                      font=("맑은 고딕", 13, "bold"))
+        self.formula_label.grid(row=1, column=0, columnspan=2, pady=(2, 0))
+
+        # 한판 소재 수량 + 세는 방법 안내
+        row1 = ttk.Frame(box)
+        row1.pack(fill="x", pady=(8, 4))
+        ttk.Label(row1, text="한 판에 소재", font=("맑은 고딕", 11, "bold")).pack(side="left")
+        self.per_plate_var = tk.StringVar(value="1")
+        ttk.Spinbox(row1, from_=1, to=9999, textvariable=self.per_plate_var, width=6,
+                    font=("맑은 고딕", 12, "bold"), justify="center",
+                    command=self._per_plate_changed).pack(side="left", padx=6)
+        ttk.Label(row1, text="장", font=("맑은 고딕", 11, "bold")).pack(side="left")
+        self.per_plate_var.trace_add("write", lambda *a: self._per_plate_changed())
+        self.count_state = ttk.Label(row1, text="", foreground="#1b7a3d")
+        self.count_state.pack(side="left", padx=(18, 0))
+
+        # 버튼
+        row2 = ttk.Frame(box)
+        row2.pack(fill="x")
+        self.count_pause_btn = ttk.Button(row2, text="일시정지", style="Cnt.TButton",
+                                          command=self._toggle_count_pause)
+        btns = (ttk.Button(row2, text="＋1판", style="Cnt.TButton",
+                           command=lambda: self._add_count(1, manual=True)),
+                ttk.Button(row2, text="－1판", style="Cnt.TButton",
+                           command=lambda: self._add_count(-1, manual=True)),
+                self.count_pause_btn,
+                ttk.Button(row2, text="↺ 리셋", style="Cnt.TButton", command=self._reset_count))
+        for col, b in enumerate(btns):
             b.grid(row=0, column=col, sticky="ew", padx=2)
-            row.columnconfigure(col, weight=1, uniform="cnt")
-            col += 1
+            row2.columnconfigure(col, weight=1, uniform="cntb")
+        self._update_count_display()
+
+    def _set_per_plate(self, n):
+        self._loading = True
+        try:
+            self.per_plate_var.set(str(n))
+        finally:
+            self._loading = False
+        self._update_count_display()
+
+    def _per_plate(self):
+        try:
+            return max(1, int(float(self.per_plate_var.get())))
+        except (ValueError, tk.TclError):
+            return 1
+
+    def _per_plate_changed(self):
+        if getattr(self, "_loading", False):
+            return
+        n = self._per_plate()
+        if self.macro.get("per_plate") != n:
+            self.macro["per_plate"] = n
+            self._mark_dirty()
+        self._update_count_display()
+
+    def _update_count_display(self):
+        n = self._per_plate()
+        self.plates_var.set(f"{self.count:,} 판")
+        self.total_var.set(f"{self.count * n:,} 장")
+        self.formula_var.set(f"소재 {n:,}장 × {self.count:,}판 = {self.count * n:,}장")
+        self._update_count_rule()
+
+    def _update_count_rule(self):
+        if self.count_paused:
+            text, color = "일시정지 — 자동으로 세지 않음 (＋1/－1은 가능)", "#b36b00"
+        elif any(is_end(s) for s in self.macro["steps"]):
+            text, color = "▶ 메모가 END 인 단계가 실행되면 +1판", "#1b7a3d"
+        else:
+            text, color = "▶ END 메모가 없어서 1회 반복이 끝날 때마다 +1판", "#1b7a3d"
+        self.count_state.config(text=text, foreground=color)
 
     def _add_count(self, n, manual=False):
         if self.count_paused and not manual:
             return
         self.count = max(0, self.count + n)
-        self.count_var.set(str(self.count))
         self.settings["count"] = self.count
         save_settings(self.settings)
+        self._update_count_display()
 
     def _toggle_count_pause(self):
         self.count_paused = not self.count_paused
-        if self.count_paused:
-            self.count_pause_btn.config(text="▶ 다시 세기")
-            self.count_state.config(text="일시정지 — 자동으로 세지 않음 (＋1/－1은 가능)",
-                                    foreground="#b36b00")
-            self.count_label.config(fg="#ffc94d")
-        else:
-            self.count_pause_btn.config(text="일시정지")
-            self.count_state.config(text="▶ 세는 중 — 1회 반복이 끝날 때마다 +1",
-                                    foreground="#1b7a3d")
-            self.count_label.config(fg="#4dff9a")
+        self.count_pause_btn.config(text="▶ 다시 세기" if self.count_paused else "일시정지")
+        for w in self.count_widgets:
+            w.config(fg="#ffc94d" if self.count_paused else "#4dff9a")
+        self._update_count_rule()
 
     def _reset_count(self):
-        if self.count and not messagebox.askyesno(APP_TITLE, f"카운터 {self.count}개를 0으로 되돌릴까요?"):
+        if self.count and not messagebox.askyesno(
+                APP_TITLE, f"카운터 {self.count}판 ({self.count * self._per_plate()}장)을 "
+                           "0으로 되돌릴까요?"):
             return
         self.count = 0
-        self.count_var.set("0")
         self.settings["count"] = 0
         save_settings(self.settings)
-
-    # ------------------------------------------------------------ 계산기
-    def _build_calculator(self, parent):
-        box = ttk.LabelFrame(parent, text=" 계산기 ", padding=8)
-        box.pack(side="left", fill="both", expand=True)
-        self.calc_expr = tk.StringVar(value="")
-        self.calc_var = tk.StringVar(value="0")
-        tk.Label(box, textvariable=self.calc_expr, anchor="e", fg="#777",
-                 font=("맑은 고딕", 10)).grid(row=0, column=0, columnspan=5, sticky="ew")
-        disp = tk.Entry(box, textvariable=self.calc_var, justify="right",
-                        font=("맑은 고딕", 18, "bold"), relief="sunken", bd=2)
-        disp.grid(row=1, column=0, columnspan=5, sticky="ew", pady=(0, 6))
-        disp.bind("<Return>", lambda e: self._calc_press("="))
-        disp.bind("<KP_Enter>", lambda e: self._calc_press("="))
-        disp.bind("<Escape>", lambda e: self._calc_press("C"))
-        self.calc_display = disp
-        layout = (("7", "8", "9", "÷", "C"),
-                  ("4", "5", "6", "×", "←"),
-                  ("1", "2", "3", "－", "%"),
-                  ("0", "00", ".", "＋", "="))
-        for r, keys in enumerate(layout, start=2):
-            for c, k in enumerate(keys):
-                st = "Calc.TButton" if k[0].isdigit() or k == "." else "Op.TButton"
-                ttk.Button(box, text=k, style=st, width=4,
-                           command=lambda k=k: self._calc_press(k)).grid(
-                    row=r, column=c, sticky="nsew", padx=2, pady=2)
-        for c in range(5):
-            box.columnconfigure(c, weight=1, uniform="calc")
-        self.calc_new = True
-
-    def _calc_press(self, k):
-        cur = self.calc_var.get().strip()
-        ops = {"÷": "÷", "×": "×", "－": "-", "＋": "+"}
-        if k == "C":
-            self.calc_var.set("0")
-            self.calc_expr.set("")
-            self.calc_new = True
-        elif k == "←":
-            self.calc_var.set(cur[:-1] or "0")
-            self.calc_new = False
-        elif k == "=":
-            try:
-                result = calc_eval(cur)
-            except Exception:
-                self.calc_expr.set(cur + " =")
-                self.calc_var.set("오류")
-                self.calc_new = True
-                return
-            self.calc_expr.set(cur + " =")
-            self.calc_var.set(format_number(result))
-            self.calc_new = True
-        elif k == "%":
-            try:
-                self.calc_var.set(format_number(calc_eval(cur) / 100))
-            except Exception:
-                self.calc_var.set("오류")
-            self.calc_new = True
-        elif k in ops:
-            if cur == "오류":
-                cur = "0"
-            sym = ops[k]
-            if cur and cur[-1] in "+-*/×÷":
-                cur = cur[:-1]
-            self.calc_var.set(cur + sym)
-            self.calc_new = False
-        else:  # 숫자, 00, .
-            if self.calc_new or cur in ("0", "오류"):
-                cur = "" if k != "." else "0"
-                if k == "00":
-                    k = "0"
-            self.calc_var.set(cur + k)
-            self.calc_new = False
+        self._update_count_display()
 
     def _apply_topmost(self):
         self.root.attributes("-topmost", bool(self.topmost.get()))
@@ -575,13 +571,19 @@ class MacroApp:
                 i + 1, STEP_TYPES.get(s["type"], s["type"]),
                 s["x"] if pos else "", s["y"] if pos else "",
                 s["value"] if s["type"] in ("key", "text") else "",
-                f'{s["delay"]:g}', s["memo"]))
+                f'{s["delay"]:g}', s["memo"]), tags=self._row_tags(i))
         if select:
             ids = [str(i) for i in select if 0 <= i < len(self.macro["steps"])]
             if ids:
                 self.tree.selection_set(ids)
                 self.tree.see(ids[-1])
         self._update_title()
+        if hasattr(self, "count_state"):
+            self._update_count_rule()
+
+    def _row_tags(self, i):
+        steps = self.macro["steps"]
+        return ("end",) if 0 <= i < len(steps) and is_end(steps[i]) else ()
 
     def _update_title(self):
         name = self.macro["name"] or "(저장 안 됨)"
@@ -694,6 +696,7 @@ class MacroApp:
             return
         self.repeat_var.set(str(self.macro["repeat"]))
         self.start_wait_var.set(f'{self.macro["start_wait"]:g}')
+        self._set_per_plate(self.macro["per_plate"])
         self.dirty = False
         self._refresh_macro_list()
         self._refresh_tree()
@@ -718,15 +721,17 @@ class MacroApp:
             if name is None:
                 return
             name = safe_filename(name)
-        self.macro = {"name": name, "repeat": 1, "start_wait": 2.0, "steps": []}
+        self.macro = {"name": name, "repeat": 1, "start_wait": 2.0, "per_plate": 1, "steps": []}
         self.repeat_var.set("1")
         self.start_wait_var.set("2")
+        self._set_per_plate(1)
         self.dirty = bool(name)
         self._refresh_macro_list()
         self._refresh_tree()
         self.status.set("인쇄 프로그램에서 누를 곳에 마우스를 올리고 F8을 누르세요. 또는 [● 클릭 녹화].")
 
     def _collect_options(self):
+        self.macro["per_plate"] = self._per_plate()
         try:
             self.macro["repeat"] = max(1, int(float(self.repeat_var.get())))
         except ValueError:
@@ -819,7 +824,7 @@ class MacroApp:
                     self.status.set(arg)
                 elif ev == "highlight":
                     for iid in self.tree.tag_has("current"):
-                        self.tree.item(iid, tags=())
+                        self.tree.item(iid, tags=self._row_tags(int(iid)))
                     if arg is not None and self.tree.exists(str(arg)):
                         self.tree.item(str(arg), tags=("current",))
                         self.tree.see(str(arg))
@@ -952,6 +957,7 @@ class MacroApp:
                 put(("status", f"{left:.0f}초 뒤 시작합니다… (정지: F10 / ESC)"))
                 self._sleep(min(1.0, left))
                 left -= 1.0
+            has_end = any(is_end(s) for s in steps)
             for r in range(repeat):
                 for i, s in enumerate(steps):
                     self._sleep(0)          # 일시정지/정지 확인
@@ -959,9 +965,12 @@ class MacroApp:
                     put(("status", f"[{r + 1}/{repeat}회] {i + 1}/{len(steps)}단계: "
                                    f'{STEP_TYPES.get(s["type"])} {s["memo"]}'))
                     self._do_step(s, move)
+                    if is_end(s):
+                        put(("count", 1))   # 메모가 END → 한 판 끝, 카운터 +1
                     if s["delay"] > 0:
                         self._sleep(s["delay"])
-                put(("count", 1))           # 1회 반복 끝 → 카운터 +1
+                if not has_end:
+                    put(("count", 1))       # END 가 없으면 1회 반복 끝날 때 +1
         except InterruptedError:
             reason = "정지됨"
         except pyautogui.FailSafeException:
@@ -1011,6 +1020,11 @@ class MacroApp:
         self.pause_btn.state(["disabled"])
         self.pause_btn.config(text="일시정지 (F11)")
         self.status.set(f"{reason}  ({time.strftime('%H:%M:%S')})")
+        if self.sound_on.get():
+            if reason == "완료":
+                play_alarm("done")
+            elif reason != "정지됨":
+                play_alarm("error")
 
     def _on_close(self):
         if self.running:
@@ -1019,6 +1033,7 @@ class MacroApp:
             return
         self.settings["topmost"] = bool(self.topmost.get())
         self.settings["speed"] = self.speed_var.get()
+        self.settings["sound"] = bool(self.sound_on.get())
         if self.macro["name"]:
             self.settings["last_macro"] = self.macro["name"]
         save_settings(self.settings)
