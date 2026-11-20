@@ -42,12 +42,25 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-APP_TITLE = "UV 인쇄 클릭 자동화"
+APP_TITLE = "UV 인쇄 클릭 자동화 [원식만듬]"
+COMPANY = "신신기획"
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MACRO_DIR = os.path.join(BASE_DIR, "macros")
+# exe 안에 같이 묶인 파일 위치 (로고 등)
+BUNDLE_DIR = getattr(sys, "_MEIPASS", BASE_DIR)
+
+
+def find_logo():
+    """로고 파일 찾기: exe 옆 logo.png 가 있으면 그것을, 없으면 exe 안에 묶인 것을 사용"""
+    for d in (BASE_DIR, BUNDLE_DIR):
+        for name in ("logo.png", "logo.gif"):
+            path = os.path.join(d, name)
+            if os.path.isfile(path):
+                return path
+    return None
 SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 
 STEP_TYPES = {
@@ -289,6 +302,9 @@ class MacroApp:
         style.configure("Stop.TButton", font=("맑은 고딕", 12, "bold"), padding=8)
         style.configure("Treeview", rowheight=24)
 
+        # 맨 위: 회사 로고 + 프로그램 이름
+        self._build_header()
+
         # 상단: 작업(매크로) 선택
         top = ttk.Frame(self.root, padding=(10, 8))
         top.pack(fill="x")
@@ -350,6 +366,33 @@ class MacroApp:
         self.rec_btn = ttk.Button(side, text="● 클릭 녹화", command=self._toggle_record)
         self.rec_btn.pack(pady=2, fill="x", ipadx=6)
 
+
+    def _build_header(self):
+        BG = "#ffffff"
+        head = tk.Frame(self.root, bg=BG, padx=12, pady=6)
+        head.pack(fill="x")
+        tk.Frame(self.root, height=2, bg="#1a4fa0").pack(fill="x")
+        self.logo_img = None
+        path = find_logo()
+        if path:
+            try:
+                img = tk.PhotoImage(file=path)
+                limit = int(56 * max(1.0, self.root.winfo_fpixels("1i") / 96.0))
+                factor = max(1, -(-img.height() // limit))   # 너무 크면 줄이기
+                if factor > 1:
+                    img = img.subsample(factor, factor)
+                self.logo_img = img
+                tk.Label(head, image=img, bg=BG).pack(side="left", padx=(0, 14))
+                self.root.iconphoto(True, img)       # 제목줄/작업표시줄 아이콘
+            except tk.TclError:
+                self.logo_img = None
+        if self.logo_img is None:
+            tk.Label(head, text=COMPANY, bg=BG, fg="#1a4fa0",
+                     font=("맑은 고딕", 20, "bold")).pack(side="left", padx=(0, 14))
+        tk.Label(head, text="UV 인쇄 클릭 자동화", bg=BG, fg="#222",
+                 font=("맑은 고딕", 18, "bold")).pack(side="left")
+        tk.Label(head, text="[원식만듬]", bg=BG, fg="#777",
+                 font=("맑은 고딕", 12, "bold")).pack(side="left", padx=(8, 0), pady=(6, 0))
 
     def _build_bottom(self):
         style = ttk.Style()

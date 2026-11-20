@@ -29,7 +29,11 @@ jobs:
           python -m pip install -r requirements.txt pyinstaller==6.11.1
 
       - name: Build exe
-        run: python -m PyInstaller --noconfirm --onefile --windowed --name UV-Click-Macro macro_app.py
+        shell: pwsh
+        run: |
+          $extra = @()
+          if (Test-Path logo.png) { $extra += @("--add-data", "logo.png;.") }
+          python -m PyInstaller --noconfirm --onefile --windowed --name UV-Click-Macro @extra macro_app.py
 
       - name: Check exe exists
         shell: pwsh
