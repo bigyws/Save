@@ -31,9 +31,7 @@ jobs:
       - name: Build exe
         shell: pwsh
         run: |
-          $extra = @()
-          if (Test-Path logo.png) { $extra += @("--add-data", "logo.png;.") }
-          python -m PyInstaller --noconfirm --onefile --windowed --name UV-Click-Macro @extra macro_app.py
+          python -m PyInstaller --noconfirm --onefile --windowed --name UV-Click-Macro --icon assets/icon.ico --add-data "assets;assets" macro_app.py
 
       - name: Check exe exists
         shell: pwsh

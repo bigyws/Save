@@ -53,14 +53,37 @@ MACRO_DIR = os.path.join(BASE_DIR, "macros")
 BUNDLE_DIR = getattr(sys, "_MEIPASS", BASE_DIR)
 
 
-def find_logo():
-    """로고 파일 찾기: exe 옆 logo.png 가 있으면 그것을, 없으면 exe 안에 묶인 것을 사용"""
-    for d in (BASE_DIR, BUNDLE_DIR):
-        for name in ("logo.png", "logo.gif"):
-            path = os.path.join(d, name)
-            if os.path.isfile(path):
-                return path
+def find_logo(height):
+    """로고 파일 찾기: exe 옆에 logo.png 가 있으면 그것을, 없으면 내장된 로고 중
+    원하는 높이에 가장 가까운 것을 사용"""
+    for name in ("logo.png", "logo.gif"):
+        path = os.path.join(BASE_DIR, name)
+        if os.path.isfile(path):
+            return path, True
+    best = None
+    for d in (os.path.join(BUNDLE_DIR, "assets"), os.path.join(BASE_DIR, "assets")):
+        if not os.path.isdir(d):
+            continue
+        for f in os.listdir(d):
+            m = re.fullmatch(r"logo_(\d+)\.png", f)
+            if m:
+                h = int(m.group(1))
+                score = (h > height, abs(h - height))   # 넘치지 않는 것 우선
+                if best is None or score < best[0]:
+                    best = (score, os.path.join(d, f))
+        if best:
+            return best[1], False
+    return None, False
+
+
+def find_icon():
+    for d in (os.path.join(BUNDLE_DIR, "assets"), os.path.join(BASE_DIR, "assets")):
+        path = os.path.join(d, "icon_64.png")
+        if os.path.isfile(path):
+            return path
     return None
+
+
 SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 
 STEP_TYPES = {
@@ -373,19 +396,29 @@ class MacroApp:
         head.pack(fill="x")
         tk.Frame(self.root, height=2, bg="#1a4fa0").pack(fill="x")
         self.logo_img = None
-        path = find_logo()
+        scale = max(1.0, self.root.winfo_fpixels("1i") / 96.0)
+        target = int(30 * scale)                  # 로고 높이 (화면 배율에 맞춤)
+        path, custom = find_logo(target)
         if path:
             try:
                 img = tk.PhotoImage(file=path)
-                limit = int(56 * max(1.0, self.root.winfo_fpixels("1i") / 96.0))
-                factor = max(1, -(-img.height() // limit))   # 너무 크면 줄이기
-                if factor > 1:
-                    img = img.subsample(factor, factor)
+                if custom:                        # 직접 넣은 logo.png 가 크면 줄이기
+                    factor = max(1, -(-img.height() // int(56 * scale)))
+                    if factor > 1:
+                        img = img.subsample(factor, factor)
                 self.logo_img = img
-                tk.Label(head, image=img, bg=BG).pack(side="left", padx=(0, 14))
-                self.root.iconphoto(True, img)       # 제목줄/작업표시줄 아이콘
+                tk.Label(head, image=img, bg=BG).pack(side="left", padx=(0, 16))
+                tk.Frame(head, width=2, bg="#cccccc").pack(side="left", fill="y",
+                                                           padx=(0, 16), pady=4)
             except tk.TclError:
                 self.logo_img = None
+        icon = find_icon()
+        if icon:
+            try:
+                self.icon_img = tk.PhotoImage(file=icon)
+                self.root.iconphoto(True, self.icon_img)   # 제목줄/작업표시줄 아이콘
+            except tk.TclError:
+                pass
         if self.logo_img is None:
             tk.Label(head, text=COMPANY, bg=BG, fg="#1a4fa0",
                      font=("맑은 고딕", 20, "bold")).pack(side="left", padx=(0, 14))
