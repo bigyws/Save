@@ -9,7 +9,7 @@ UV 인쇄기 클릭 자동화 (클릭 매크로)
 
 단축키 (다른 프로그램이 앞에 있어도 동작)
   F8  : 지금 마우스가 있는 위치를 '클릭' 단계로 추가
-  F12 : 지금 마우스 위치를 END 클릭 단계로 추가 (녹화 중이면 방금 클릭을 END 로)
+  F12 : 마우스 위치에 END 표시 / 같은 위치에서 다시 누르면 END 해제
   F9  : 시작
   F10 : 정지 (녹화 중이면 녹화 종료)
   ESC : 실행 중일 때 정지
@@ -208,7 +208,7 @@ class StepDialog(tk.Toplevel):
         self.memo = tk.StringVar(value=self.step["memo"])
         ttk.Entry(frm, textvariable=self.memo, width=28).grid(
             row=6, column=1, columnspan=2, sticky="w", **pad)
-        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1번 (F12 로 추가해도 END)",
+        ttk.Label(frm, text="※ 메모에 END 라고 적으면 이 단계에서 카운터 +1번 (F12 로 켜고 끄기)",
                   foreground="#b00020").grid(row=7, column=1, columnspan=2, sticky="w", padx=6)
 
         btns = ttk.Frame(frm)
@@ -376,7 +376,7 @@ class MacroApp:
         self.tree.pack(side="left", fill="both", expand=True)
         for text, cmd in (
             ("위치 추가 (F8)", self._add_current_position),
-            ("END 위치 추가 (F12)", lambda: self._add_current_position(end=True)),
+            ("END 표시/해제 (F12)", self._toggle_end_here),
             ("단계 직접 추가", self._add_step),
             ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기"))),
             ("수정", self._edit_step),
@@ -647,23 +647,56 @@ class MacroApp:
         self._refresh_tree(select=[idx])
 
     # ------------------------------------------------------------ 단계 편집
-    def _add_current_position(self, end=False):
-        if self.running:
-            return
-        if self.recording:
-            if end and self.macro["steps"]:
-                # 녹화 중 F12 → 방금 녹화한 클릭을 END 로 표시
-                self.macro["steps"][-1]["memo"] = "END"
-                self._mark_dirty()
-                self._refresh_tree(select=[len(self.macro["steps"]) - 1])
-                self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F10")
+    def _add_current_position(self):
+        """F8: 지금 마우스 위치를 클릭 단계로 추가"""
+        if self.running or self.recording:
             return
         x, y = pyautogui.position()
-        self._insert_step(new_step("click", x, y, delay=0.5, memo="END" if end else ""))
-        if end:
-            self.status.set(f"END 클릭 위치 추가: ({x}, {y})  — 이 단계가 실행되면 카운터 +1번")
-        else:
-            self.status.set(f"클릭 위치 추가: ({x}, {y})  — 메모를 적어두면 나중에 알아보기 쉽습니다.")
+        self._insert_step(new_step("click", x, y, delay=0.5))
+        self.status.set(f"클릭 위치 추가: ({x}, {y})  — 메모를 적어두면 나중에 알아보기 쉽습니다.")
+
+    def _toggle_end_here(self):
+        """F12: 그 위치에 END 표시 / 같은 위치에서 다시 누르면 END 없애기"""
+        if self.running:
+            return
+        steps = self.macro["steps"]
+        if self.recording:
+            # 녹화 중에는 방금 녹화한 클릭의 END 를 켜고 끄기
+            if steps:
+                last = steps[-1]
+                last["memo"] = "" if is_end(last) else "END"
+                self._mark_dirty()
+                self._refresh_tree(select=[len(steps) - 1])
+                self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F10" if is_end(last)
+                                else "녹화 중… 방금 클릭의 END 를 없앴습니다. 끝나면 F10")
+            return
+        x, y = pyautogui.position()
+        near = [i for i, st in enumerate(steps)
+                if st["type"] in POSITION_TYPES and abs(st["x"] - x) <= 10 and abs(st["y"] - y) <= 10]
+        if near:
+            sel = [i for i in self._selected() if i in near]
+            i = sel[0] if sel else near[-1]
+            st = steps[i]
+            if is_end(st):
+                if st.get("f12"):
+                    # F12 로 새로 만든 단계였으면 단계째 없애기
+                    del steps[i]
+                    self._mark_dirty()
+                    self._refresh_tree(select=[min(i, len(steps) - 1)])
+                    self.status.set(f"({x}, {y}) END 단계를 없앴습니다.")
+                    return
+                st["memo"] = ""
+                self.status.set(f"{i + 1}번 단계 ({st['x']}, {st['y']}) 의 END 를 없앴습니다.")
+            else:
+                st["memo"] = "END"
+                self.status.set(f"{i + 1}번 단계 ({st['x']}, {st['y']}) 를 END 로 표시 — 실행되면 카운터 +1번")
+            self._mark_dirty()
+            self._refresh_tree(select=[i])
+            return
+        step = new_step("click", x, y, delay=0.5, memo="END")
+        step["f12"] = True
+        self._insert_step(step)
+        self.status.set(f"END 클릭 위치 추가: ({x}, {y})  — 같은 위치에서 F12 를 다시 누르면 없어집니다.")
 
     def _add_step(self):
         x, y = pyautogui.position()
@@ -866,7 +899,7 @@ class MacroApp:
                     if arg == "add":
                         self._add_current_position()
                     elif arg == "add_end":
-                        self._add_current_position(end=True)
+                        self._toggle_end_here()
                     elif arg == "start":
                         self.start()
                     elif arg == "pause":
