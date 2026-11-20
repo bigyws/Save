@@ -121,28 +121,6 @@ def is_end(step):
     return step.get("memo", "").strip().upper() == "END"
 
 
-def play_alarm(kind="done"):
-    """끝났을 때 소리 알림 (따로 실행되어 프로그램이 멈추지 않음)"""
-    def run():
-        try:
-            import winsound
-            if kind == "done":
-                for _ in range(2):
-                    for f in (880, 1175, 1568):
-                        winsound.Beep(f, 160)
-                    time.sleep(0.15)
-            else:
-                for _ in range(3):
-                    winsound.Beep(440, 400)
-                    time.sleep(0.1)
-        except Exception:
-            try:
-                print("\a", end="", flush=True)
-            except Exception:
-                pass
-    threading.Thread(target=run, daemon=True).start()
-
-
 class StepDialog(tk.Toplevel):
     """단계 추가/수정 창"""
 
@@ -421,15 +399,7 @@ class MacroApp:
         self.show_tools = tk.BooleanVar(value=self.settings.get("show_tools", True))
         ttk.Checkbutton(opt, text="카운터 보기", variable=self.show_tools,
                         command=self._apply_show_tools).pack(side="right")
-        self.sound_on = tk.BooleanVar(value=self.settings.get("sound", True))
-        ttk.Checkbutton(opt, text="끝나면 소리 알림", variable=self.sound_on,
-                        command=self._save_sound_option).pack(side="right", padx=(0, 12))
         self._apply_show_tools()
-
-    def _save_sound_option(self):
-        self.settings["sound"] = bool(self.sound_on.get())
-        if self.sound_on.get():
-            play_alarm("done")      # 어떤 소리인지 한 번 들려주기
 
     def _apply_show_tools(self):
         if self.show_tools.get():
@@ -461,10 +431,6 @@ class MacroApp:
                            font=("맑은 고딕", 34, "bold"))
             lbl.pack(fill="x")
             self.count_widgets.append(lbl)
-        self.formula_var = tk.StringVar()
-        self.formula_label = tk.Label(panel, textvariable=self.formula_var, bg=BG, fg=FG2,
-                                      font=("맑은 고딕", 13, "bold"))
-        self.formula_label.grid(row=1, column=0, columnspan=2, pady=(2, 0))
 
         # 한 번 소재 수량 + 세는 방법 안내
         row1 = ttk.Frame(box)
@@ -522,7 +488,6 @@ class MacroApp:
         n = self._per_plate()
         self.plates_var.set(f"{self.count:,} 번")
         self.total_var.set(f"{self.count * n:,} 장")
-        self.formula_var.set(f"소재 {n:,}장 × {self.count:,}번 = {self.count * n:,}장")
         self._update_count_rule()
 
     def _update_count_rule(self):
@@ -1020,11 +985,6 @@ class MacroApp:
         self.pause_btn.state(["disabled"])
         self.pause_btn.config(text="일시정지 (F11)")
         self.status.set(f"{reason}  ({time.strftime('%H:%M:%S')})")
-        if self.sound_on.get():
-            if reason == "완료":
-                play_alarm("done")
-            elif reason != "정지됨":
-                play_alarm("error")
 
     def _on_close(self):
         if self.running:
@@ -1033,7 +993,6 @@ class MacroApp:
             return
         self.settings["topmost"] = bool(self.topmost.get())
         self.settings["speed"] = self.speed_var.get()
-        self.settings["sound"] = bool(self.sound_on.get())
         if self.macro["name"]:
             self.settings["last_macro"] = self.macro["name"]
         save_settings(self.settings)
