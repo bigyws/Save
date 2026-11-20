@@ -572,7 +572,7 @@ class MacroApp:
         elif any(is_end(s) for s in self.macro["steps"]):
             text, color = "▶ 메모가 END 인 단계가 실행되면 +1번", "#1b7a3d"
         else:
-            text, color = "▶ END 메모가 없어서 1회 반복이 끝날 때마다 +1번", "#1b7a3d"
+            text, color = "※ 메모에 END 가 없어서 세지 않음 (끝나는 단계 메모에 END 입력)", "#b00020"
         self.count_state.config(text=text, foreground=color)
 
     def _add_count(self, n, manual=False):
@@ -998,7 +998,6 @@ class MacroApp:
                 put(("status", f"{left:.0f}초 뒤 시작합니다… (정지: F10 / ESC)"))
                 self._sleep(min(1.0, left))
                 left -= 1.0
-            has_end = any(is_end(s) for s in steps)
             for r in range(repeat):
                 for i, s in enumerate(steps):
                     self._sleep(0)          # 일시정지/정지 확인
@@ -1010,8 +1009,6 @@ class MacroApp:
                         put(("count", 1))   # 메모가 END → 한 번 끝, 카운터 +1
                     if s["delay"] > 0:
                         self._sleep(s["delay"])
-                if not has_end:
-                    put(("count", 1))       # END 가 없으면 1회 반복 끝날 때 +1
         except InterruptedError:
             reason = "정지됨"
         except pyautogui.FailSafeException:
