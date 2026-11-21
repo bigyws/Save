@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.20"
+VERSION = "v.21"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.21", "11/21", "위쪽 버튼 줄 오른쪽 끝을 목록 오른쪽 끝에 맞춤"),
     ("v.20", "11/21", "위쪽 새 작업·저장·다른 이름·삭제 버튼 넓게, 버튼 이름 '녹화 F4'"),
     ("v.19", "11/21", "녹화 단축키 F4 로 변경, 버전 표시와 업그레이드 내역 보기 추가"),
     ("v.18", "11/21", "오른쪽 버튼 한 줄 배치, 창 가로 폭 줄이기"),
@@ -361,12 +362,18 @@ class MacroApp:
         self._build_header()
 
         # 상단: 작업(매크로) 선택
-        top = ttk.Frame(self.root, padding=(8, 4))
-        top.pack(fill="x")
-        # 오른쪽 체크를 먼저 배치해야 창이 좁아도 안 잘림
-        self.topmost = tk.BooleanVar(value=self.settings.get("topmost", True))
-        ttk.Checkbutton(top, text="항상 위", variable=self.topmost,
-                        command=self._apply_topmost).pack(side="right", padx=(6, 0))
+        # 가운데: 위쪽 작업 줄 + 단계 목록 + 오른쪽 버튼 (같은 칸에 맞춰 줄 맞춤)
+        # 아래쪽 영역을 먼저 배치해야 창이 작아도 잘리지 않음
+        self._build_bottom()
+
+        mid = ttk.Frame(self.root, padding=(8, 4, 8, 0))
+        mid.pack(fill="both", expand=True)
+        mid.columnconfigure(0, weight=1)
+        mid.rowconfigure(1, weight=1)
+
+        # 위쪽 작업 줄: 목록(스크롤바 포함)과 오른쪽 끝을 맞춤
+        top = ttk.Frame(mid)
+        top.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 4))
         ttk.Label(top, text="작업").pack(side="left")
         self.macro_var = tk.StringVar()
         self.macro_combo = ttk.Combobox(top, textvariable=self.macro_var,
@@ -374,18 +381,16 @@ class MacroApp:
         self.macro_combo.pack(side="left", padx=4)
         self.macro_combo.bind("<<ComboboxSelected>>",
                               lambda e: self._switch_macro(self.macro_var.get()))
-        for text, cmd in (("새 작업", self._new_macro), ("저장", self._save),
-                          ("다른 이름", self._save_as), ("삭제", self._delete_macro)):
-            ttk.Button(top, text=text, command=cmd, style="Side.TButton",
-                       width=7).pack(side="left", padx=1, fill="x", expand=True)
+        for i, (text, cmd) in enumerate((("새 작업", self._new_macro), ("저장", self._save),
+                                         ("다른 이름", self._save_as), ("삭제", self._delete_macro))):
+            ttk.Button(top, text=text, command=cmd, style="Side.TButton", width=7).pack(
+                side="left", padx=(1, 0 if i == 3 else 1), fill="x", expand=True)
+        self.topmost = tk.BooleanVar(value=self.settings.get("topmost", True))
+        ttk.Checkbutton(mid, text="항상 위", variable=self.topmost,
+                        command=self._apply_topmost).grid(row=0, column=2, sticky="e",
+                                                          padx=(6, 0), pady=(0, 4))
         self._apply_topmost()
 
-        # 가운데: 단계 목록
-        # 아래쪽 영역을 먼저 배치해야 창이 작아도 잘리지 않음
-        self._build_bottom()
-
-        mid = ttk.Frame(self.root, padding=(8, 0))
-        mid.pack(fill="both", expand=True)
         cols = ("no", "type", "x", "y", "value", "delay", "memo")
         self.tree = ttk.Treeview(mid, columns=cols, show="headings", selectmode="extended")
         heads = {"no": ("#", 24), "type": ("동작", 58), "x": ("X", 38), "y": ("Y", 38),
@@ -403,9 +408,9 @@ class MacroApp:
         self.tree.bind("<Delete>", lambda e: self._delete_steps())
 
         side = ttk.Frame(mid, padding=(6, 0, 0, 0))
-        side.pack(side="right", fill="y")
-        sb.pack(side="right", fill="y")
-        self.tree.pack(side="left", fill="both", expand=True)
+        self.tree.grid(row=1, column=0, sticky="nsew")
+        sb.grid(row=1, column=1, sticky="ns")
+        side.grid(row=1, column=2, sticky="ns")
         side_btns = (
             ("위치 추가 F8", self._add_current_position),
             ("END F12", self._toggle_end_here),
