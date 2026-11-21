@@ -281,10 +281,10 @@ class MacroApp:
         self.root = root
         self.root.title(APP_TITLE)
         scale = max(1.0, self.root.winfo_fpixels("1i") / 96.0)
-        w = min(int(720 * scale), self.root.winfo_screenwidth() - 40)
-        h = min(int(600 * scale), self.root.winfo_screenheight() - 80)
+        w = min(int(560 * scale), self.root.winfo_screenwidth() - 40)
+        h = min(int(620 * scale), self.root.winfo_screenheight() - 80)
         self.root.geometry(f"{w}x{h}")
-        self.root.minsize(min(int(660 * scale), w), min(int(480 * scale), h))
+        self.root.minsize(min(int(520 * scale), w), min(int(520 * scale), h))
 
         self.events = queue.Queue()      # 다른 스레드 → 화면 업데이트
         self.stop_event = threading.Event()
@@ -343,7 +343,7 @@ class MacroApp:
         ttk.Label(top, text="작업").pack(side="left")
         self.macro_var = tk.StringVar()
         self.macro_combo = ttk.Combobox(top, textvariable=self.macro_var,
-                                        state="readonly", width=18)
+                                        state="readonly", width=12)
         self.macro_combo.pack(side="left", padx=4)
         self.macro_combo.bind("<<ComboboxSelected>>",
                               lambda e: self._switch_macro(self.macro_var.get()))
@@ -361,8 +361,8 @@ class MacroApp:
         mid.pack(fill="both", expand=True)
         cols = ("no", "type", "x", "y", "value", "delay", "memo")
         self.tree = ttk.Treeview(mid, columns=cols, show="headings", selectmode="extended")
-        heads = {"no": ("#", 28), "type": ("동작", 66), "x": ("X", 46), "y": ("Y", 46),
-                 "value": ("키/글자", 70), "delay": ("후대기", 50), "memo": ("메모", 120)}
+        heads = {"no": ("#", 24), "type": ("동작", 58), "x": ("X", 38), "y": ("Y", 38),
+                 "value": ("키/글자", 58), "delay": ("후대기", 50), "memo": ("메모", 70)}
         for c in cols:
             text, w = heads[c]
             self.tree.heading(c, text=text)
@@ -379,23 +379,25 @@ class MacroApp:
         side.pack(side="right", fill="y")
         sb.pack(side="right", fill="y")
         self.tree.pack(side="left", fill="both", expand=True)
-        pairs = (
-            (("위치 추가 F8", self._add_current_position),
-             ("END F12", self._toggle_end_here)),
-            (("직접 추가", self._add_step),
-             ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기")))),
-            (("수정", self._edit_step), ("복사", self._duplicate_steps)),
-            (("▲ 위로", lambda: self._move_steps(-1)), ("▼ 아래로", lambda: self._move_steps(1))),
-            (("삭제", self._delete_steps), ("위치 확인", self._show_position)),
+        side_btns = (
+            ("위치 추가 F8", self._add_current_position),
+            ("END F12", self._toggle_end_here),
+            ("직접 추가", self._add_step),
+            ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기"))),
+            ("수정", self._edit_step),
+            ("복사", self._duplicate_steps),
+            ("▲ 위로", lambda: self._move_steps(-1)),
+            ("▼ 아래로", lambda: self._move_steps(1)),
+            ("삭제", self._delete_steps),
+            ("위치 확인", self._show_position),
         )
-        for r, pair in enumerate(pairs):
-            for c, (text, cmd) in enumerate(pair):
-                ttk.Button(side, text=text, command=cmd, style="Side.TButton", width=9).grid(
-                    row=r, column=c, sticky="ew", padx=1, pady=1)
-        ttk.Separator(side).grid(row=len(pairs), column=0, columnspan=2, sticky="ew", pady=4)
+        for r, (text, cmd) in enumerate(side_btns):
+            ttk.Button(side, text=text, command=cmd, style="Side.TButton", width=11).grid(
+                row=r, column=0, sticky="ew", pady=1)
+        ttk.Separator(side).grid(row=len(side_btns), column=0, sticky="ew", pady=3)
         self.rec_btn = ttk.Button(side, text="● 클릭 녹화 F3", command=self._toggle_record,
-                                  style="Side.TButton")
-        self.rec_btn.grid(row=len(pairs) + 1, column=0, columnspan=2, sticky="ew", padx=1)
+                                  style="Side.TButton", width=11)
+        self.rec_btn.grid(row=len(side_btns) + 1, column=0, sticky="ew")
 
 
     def _build_header(self):
@@ -468,21 +470,21 @@ class MacroApp:
         # 실행 옵션 줄
         opt = ttk.Frame(self.root, padding=(8, 4, 8, 0))
         opt.pack(fill="x", side="bottom")
-        ttk.Label(opt, text="반복 횟수").pack(side="left")
+        self.show_tools = tk.BooleanVar(value=self.settings.get("show_tools", True))
+        ttk.Checkbutton(opt, text="카운터", variable=self.show_tools,
+                        command=self._apply_show_tools).pack(side="right")
+        ttk.Label(opt, text="반복").pack(side="left")
         self.repeat_var = tk.StringVar(value="1")
-        ttk.Spinbox(opt, from_=1, to=9999, textvariable=self.repeat_var, width=6,
-                    command=self._mark_dirty).pack(side="left", padx=(4, 14))
-        ttk.Label(opt, text="시작 전 대기(초)").pack(side="left")
+        ttk.Spinbox(opt, from_=1, to=9999, textvariable=self.repeat_var, width=5,
+                    command=self._mark_dirty).pack(side="left", padx=(3, 10))
+        ttk.Label(opt, text="시작대기(초)").pack(side="left")
         self.start_wait_var = tk.StringVar(value="2")
         ttk.Spinbox(opt, from_=0, to=30, increment=1, textvariable=self.start_wait_var,
-                    width=5, command=self._mark_dirty).pack(side="left", padx=(4, 14))
+                    width=3, command=self._mark_dirty).pack(side="left", padx=(3, 10))
         self.speed_var = tk.StringVar(value=self.settings.get("speed", "보통"))
-        ttk.Label(opt, text="마우스 이동").pack(side="left")
-        ttk.Combobox(opt, textvariable=self.speed_var, state="readonly", width=6,
-                     values=["빠름", "보통", "느림"]).pack(side="left", padx=4)
-        self.show_tools = tk.BooleanVar(value=self.settings.get("show_tools", True))
-        ttk.Checkbutton(opt, text="카운터 보기", variable=self.show_tools,
-                        command=self._apply_show_tools).pack(side="right")
+        ttk.Label(opt, text="이동").pack(side="left")
+        ttk.Combobox(opt, textvariable=self.speed_var, state="readonly", width=5,
+                     values=["빠름", "보통", "느림"]).pack(side="left", padx=3)
         self._apply_show_tools()
 
     def _apply_show_tools(self):
