@@ -8,7 +8,7 @@ UV 인쇄기 클릭 자동화 (클릭 매크로)
 - 클릭 녹화: 직접 한 번 클릭해 보면 위치와 간격이 단계로 기록됩니다.
 
 단축키 (다른 프로그램이 앞에 있어도 동작)
-  F3  : 클릭 녹화 시작 / 다시 누르면 녹화 끝 (녹화 중엔 창이 내려감)
+  F4  : 클릭 녹화 시작 / 다시 누르면 녹화 끝 (녹화 중엔 창이 내려감)
   F8  : 지금 마우스가 있는 위치를 '클릭' 단계로 추가
   F12 : 단계에 END 표시 / 다시 누르면 END 해제 (단계 번호는 추가되지 않음)
   F9  : 시작
@@ -395,7 +395,7 @@ class MacroApp:
             ttk.Button(side, text=text, command=cmd, style="Side.TButton", width=11).grid(
                 row=r, column=0, sticky="ew", pady=1)
         ttk.Separator(side).grid(row=len(side_btns), column=0, sticky="ew", pady=3)
-        self.rec_btn = ttk.Button(side, text="● 클릭 녹화 F3", command=self._toggle_record,
+        self.rec_btn = ttk.Button(side, text="● 클릭 녹화 F4", command=self._toggle_record,
                                   style="Side.TButton", width=11)
         self.rec_btn.grid(row=len(side_btns) + 1, column=0, sticky="ew")
 
@@ -691,8 +691,8 @@ class MacroApp:
                 last["memo"] = "" if is_end(last) else "END"
                 self._mark_dirty()
                 self._refresh_tree(select=[len(steps) - 1])
-                self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F3" if is_end(last)
-                                else "녹화 중… 방금 클릭의 END 를 없앴습니다. 끝나면 F3")
+                self.status.set("녹화 중… 방금 클릭을 END 로 표시했습니다. 끝나면 F4" if is_end(last)
+                                else "녹화 중… 방금 클릭의 END 를 없앴습니다. 끝나면 F4")
             return
         if not steps:
             self.status.set("단계가 없습니다. 먼저 F8 로 클릭 위치를 추가하세요.")
@@ -834,7 +834,7 @@ class MacroApp:
         self.dirty = bool(name)
         self._refresh_macro_list()
         self._refresh_tree()
-        self.status.set("인쇄 프로그램에서 누를 곳에 마우스를 올리고 F8을 누르세요. 또는 F3 로 클릭 녹화.")
+        self.status.set("인쇄 프로그램에서 누를 곳에 마우스를 올리고 F8을 누르세요. 또는 F4 로 클릭 녹화.")
 
     def _collect_options(self):
         self.macro["per_plate"] = self._per_plate()
@@ -900,7 +900,7 @@ class MacroApp:
                 self.events.put(("hotkey", "add_end"))
             elif key == keyboard.Key.f9:
                 self.events.put(("hotkey", "start"))
-            elif key == keyboard.Key.f3:
+            elif key == keyboard.Key.f4:
                 self.events.put(("hotkey", "record"))
             elif key == keyboard.Key.f10:
                 self.events.put(("hotkey", "stop"))
@@ -959,8 +959,8 @@ class MacroApp:
         if not self.recording:
             self.recording = True
             self.rec_last_time = None
-            self.rec_btn.config(text="■ 녹화 끝 F3")
-            self.status.set("녹화 중… 평소처럼 클릭하세요 (목록 끝에 이어서 추가). 끝나면 F3.")
+            self.rec_btn.config(text="■ 녹화 끝 F4")
+            self.status.set("녹화 중… 평소처럼 클릭하세요 (목록 끝에 이어서 추가). 끝나면 F4.")
             self.root.iconify()   # 창을 내려서 클릭에 방해되지 않게
 
             def on_click(x, y, button, pressed):
@@ -975,7 +975,7 @@ class MacroApp:
             if self.mouse_listener:
                 self.mouse_listener.stop()
                 self.mouse_listener = None
-            self.rec_btn.config(text="● 클릭 녹화 F3")
+            self.rec_btn.config(text="● 클릭 녹화 F4")
             self.root.deiconify()
             self.root.lift()
             self.status.set("녹화 끝. 대기시간은 실제 간격대로 들어갔으니 필요하면 수정하세요.")
@@ -1001,7 +1001,7 @@ class MacroApp:
         self.rec_last_time = t
         self._mark_dirty()
         self._refresh_tree(select=[len(steps) - 1])
-        self.status.set(f"녹화 중… {len(steps)}번째 클릭 ({x}, {y})  — 끝나면 F3")
+        self.status.set(f"녹화 중… {len(steps)}번째 클릭 ({x}, {y})  — 끝나면 F4")
 
     # ------------------------------------------------------------ 실행
     def start(self):
