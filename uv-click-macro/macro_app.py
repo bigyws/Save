@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.19"
+VERSION = "v.20"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.20", "11/21", "위쪽 새 작업·저장·다른 이름·삭제 버튼 넓게, 버튼 이름 '녹화 F4'"),
     ("v.19", "11/21", "녹화 단축키 F4 로 변경, 버전 표시와 업그레이드 내역 보기 추가"),
     ("v.18", "11/21", "오른쪽 버튼 한 줄 배치, 창 가로 폭 줄이기"),
     ("v.17", "11/21", "컴팩트 화면 적용, 녹화 단축키 F3"),
@@ -365,7 +366,7 @@ class MacroApp:
         # 오른쪽 체크를 먼저 배치해야 창이 좁아도 안 잘림
         self.topmost = tk.BooleanVar(value=self.settings.get("topmost", True))
         ttk.Checkbutton(top, text="항상 위", variable=self.topmost,
-                        command=self._apply_topmost).pack(side="right")
+                        command=self._apply_topmost).pack(side="right", padx=(6, 0))
         ttk.Label(top, text="작업").pack(side="left")
         self.macro_var = tk.StringVar()
         self.macro_combo = ttk.Combobox(top, textvariable=self.macro_var,
@@ -376,7 +377,7 @@ class MacroApp:
         for text, cmd in (("새 작업", self._new_macro), ("저장", self._save),
                           ("다른 이름", self._save_as), ("삭제", self._delete_macro)):
             ttk.Button(top, text=text, command=cmd, style="Side.TButton",
-                       width=7).pack(side="left", padx=1)
+                       width=7).pack(side="left", padx=1, fill="x", expand=True)
         self._apply_topmost()
 
         # 가운데: 단계 목록
@@ -421,7 +422,7 @@ class MacroApp:
             ttk.Button(side, text=text, command=cmd, style="Side.TButton", width=11).grid(
                 row=r, column=0, sticky="ew", pady=1)
         ttk.Separator(side).grid(row=len(side_btns), column=0, sticky="ew", pady=3)
-        self.rec_btn = ttk.Button(side, text="● 클릭 녹화 F4", command=self._toggle_record,
+        self.rec_btn = ttk.Button(side, text="● 녹화 F4", command=self._toggle_record,
                                   style="Side.TButton", width=11)
         self.rec_btn.grid(row=len(side_btns) + 1, column=0, sticky="ew")
 
@@ -1036,7 +1037,7 @@ class MacroApp:
             if self.mouse_listener:
                 self.mouse_listener.stop()
                 self.mouse_listener = None
-            self.rec_btn.config(text="● 클릭 녹화 F4")
+            self.rec_btn.config(text="● 녹화 F4")
             self.root.deiconify()
             self.root.lift()
             self.status.set("녹화 끝. 대기시간은 실제 간격대로 들어갔으니 필요하면 수정하세요.")
