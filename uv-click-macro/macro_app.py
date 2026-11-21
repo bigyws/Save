@@ -100,7 +100,7 @@ TYPE_BY_LABEL = {v: k for k, v in STEP_TYPES.items()}
 POSITION_TYPES = ("click", "double", "right", "move")
 
 
-def new_step(kind="click", x=0, y=0, value="", delay=0.5, memo=""):
+def new_step(kind="click", x=0, y=0, value="", delay=0.2, memo=""):
     return {"type": kind, "x": int(x), "y": int(y), "value": value,
             "delay": float(delay), "memo": memo}
 
@@ -280,10 +280,10 @@ class MacroApp:
         self.root = root
         self.root.title(APP_TITLE)
         scale = max(1.0, self.root.winfo_fpixels("1i") / 96.0)
-        w = min(int(940 * scale), self.root.winfo_screenwidth() - 40)
-        h = min(int(860 * scale), self.root.winfo_screenheight() - 80)
+        w = min(int(720 * scale), self.root.winfo_screenwidth() - 40)
+        h = min(int(600 * scale), self.root.winfo_screenheight() - 80)
         self.root.geometry(f"{w}x{h}")
-        self.root.minsize(min(int(860 * scale), w), min(int(560 * scale), h))
+        self.root.minsize(min(int(660 * scale), w), min(int(480 * scale), h))
 
         self.events = queue.Queue()      # 다른 스레드 → 화면 업데이트
         self.stop_event = threading.Event()
@@ -323,42 +323,45 @@ class MacroApp:
             style.theme_use("vista" if sys.platform == "win32" else "clam")
         except tk.TclError:
             pass
-        style.configure("Start.TButton", font=("맑은 고딕", 12, "bold"), padding=8)
-        style.configure("Stop.TButton", font=("맑은 고딕", 12, "bold"), padding=8)
-        style.configure("Treeview", rowheight=24)
+        style.configure("Start.TButton", font=("맑은 고딕", 10, "bold"), padding=(4, 3))
+        style.configure("Stop.TButton", font=("맑은 고딕", 10, "bold"), padding=(4, 3))
+        style.configure("Side.TButton", font=("맑은 고딕", 9), padding=(2, 1))
+        style.configure("Treeview", rowheight=20, font=("맑은 고딕", 9))
+        style.configure("Treeview.Heading", font=("맑은 고딕", 9, "bold"))
 
         # 맨 위: 회사 로고 + 프로그램 이름
         self._build_header()
 
         # 상단: 작업(매크로) 선택
-        top = ttk.Frame(self.root, padding=(10, 8))
+        top = ttk.Frame(self.root, padding=(8, 4))
         top.pack(fill="x")
-        ttk.Label(top, text="작업 선택").pack(side="left")
-        self.macro_var = tk.StringVar()
-        self.macro_combo = ttk.Combobox(top, textvariable=self.macro_var,
-                                        state="readonly", width=24)
-        self.macro_combo.pack(side="left", padx=6)
-        self.macro_combo.bind("<<ComboboxSelected>>",
-                              lambda e: self._switch_macro(self.macro_var.get()))
-        ttk.Button(top, text="새 작업", command=self._new_macro).pack(side="left", padx=2)
-        ttk.Button(top, text="저장", command=self._save).pack(side="left", padx=2)
-        ttk.Button(top, text="다른 이름으로", command=self._save_as).pack(side="left", padx=2)
-        ttk.Button(top, text="삭제", command=self._delete_macro).pack(side="left", padx=2)
+        # 오른쪽 체크를 먼저 배치해야 창이 좁아도 안 잘림
         self.topmost = tk.BooleanVar(value=self.settings.get("topmost", True))
         ttk.Checkbutton(top, text="항상 위", variable=self.topmost,
                         command=self._apply_topmost).pack(side="right")
+        ttk.Label(top, text="작업").pack(side="left")
+        self.macro_var = tk.StringVar()
+        self.macro_combo = ttk.Combobox(top, textvariable=self.macro_var,
+                                        state="readonly", width=18)
+        self.macro_combo.pack(side="left", padx=4)
+        self.macro_combo.bind("<<ComboboxSelected>>",
+                              lambda e: self._switch_macro(self.macro_var.get()))
+        for text, cmd in (("새 작업", self._new_macro), ("저장", self._save),
+                          ("다른 이름", self._save_as), ("삭제", self._delete_macro)):
+            ttk.Button(top, text=text, command=cmd, style="Side.TButton",
+                       width=7).pack(side="left", padx=1)
         self._apply_topmost()
 
         # 가운데: 단계 목록
         # 아래쪽 영역을 먼저 배치해야 창이 작아도 잘리지 않음
         self._build_bottom()
 
-        mid = ttk.Frame(self.root, padding=(10, 0))
+        mid = ttk.Frame(self.root, padding=(8, 0))
         mid.pack(fill="both", expand=True)
         cols = ("no", "type", "x", "y", "value", "delay", "memo")
         self.tree = ttk.Treeview(mid, columns=cols, show="headings", selectmode="extended")
-        heads = {"no": ("#", 36), "type": ("동작", 90), "x": ("X", 60), "y": ("Y", 60),
-                 "value": ("키/글자", 130), "delay": ("후 대기(초)", 80), "memo": ("메모", 200)}
+        heads = {"no": ("#", 28), "type": ("동작", 66), "x": ("X", 46), "y": ("Y", 46),
+                 "value": ("키/글자", 70), "delay": ("후대기", 50), "memo": ("메모", 120)}
         for c in cols:
             text, w = heads[c]
             self.tree.heading(c, text=text)
@@ -371,36 +374,37 @@ class MacroApp:
         self.tree.bind("<Double-1>", lambda e: self._edit_step())
         self.tree.bind("<Delete>", lambda e: self._delete_steps())
 
-        side = ttk.Frame(mid, padding=(8, 0, 0, 0))
+        side = ttk.Frame(mid, padding=(6, 0, 0, 0))
         side.pack(side="right", fill="y")
         sb.pack(side="right", fill="y")
         self.tree.pack(side="left", fill="both", expand=True)
-        for text, cmd in (
-            ("위치 추가 (F8)", self._add_current_position),
-            ("END 표시/해제 (F12)", self._toggle_end_here),
-            ("단계 직접 추가", self._add_step),
-            ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기"))),
-            ("수정", self._edit_step),
-            ("복사", self._duplicate_steps),
-            ("삭제", self._delete_steps),
-            ("▲ 위로", lambda: self._move_steps(-1)),
-            ("▼ 아래로", lambda: self._move_steps(1)),
-            ("위치 확인", self._show_position),
-        ):
-            ttk.Button(side, text=text, command=cmd).pack(pady=2, fill="x", ipadx=6)
-        ttk.Separator(side).pack(fill="x", pady=6)
-        self.rec_btn = ttk.Button(side, text="● 클릭 녹화", command=self._toggle_record)
-        self.rec_btn.pack(pady=2, fill="x", ipadx=6)
+        pairs = (
+            (("위치 추가 F8", self._add_current_position),
+             ("END F12", self._toggle_end_here)),
+            (("직접 추가", self._add_step),
+             ("대기 추가", lambda: self._insert_step(new_step("wait", delay=1.0, memo="기다리기")))),
+            (("수정", self._edit_step), ("복사", self._duplicate_steps)),
+            (("▲ 위로", lambda: self._move_steps(-1)), ("▼ 아래로", lambda: self._move_steps(1))),
+            (("삭제", self._delete_steps), ("위치 확인", self._show_position)),
+        )
+        for r, pair in enumerate(pairs):
+            for c, (text, cmd) in enumerate(pair):
+                ttk.Button(side, text=text, command=cmd, style="Side.TButton", width=9).grid(
+                    row=r, column=c, sticky="ew", padx=1, pady=1)
+        ttk.Separator(side).grid(row=len(pairs), column=0, columnspan=2, sticky="ew", pady=4)
+        self.rec_btn = ttk.Button(side, text="● 클릭 녹화", command=self._toggle_record,
+                                  style="Side.TButton")
+        self.rec_btn.grid(row=len(pairs) + 1, column=0, columnspan=2, sticky="ew", padx=1)
 
 
     def _build_header(self):
         BG = "#ffffff"
-        head = tk.Frame(self.root, bg=BG, padx=12, pady=6)
+        head = tk.Frame(self.root, bg=BG, padx=8, pady=3)
         head.pack(fill="x")
         tk.Frame(self.root, height=2, bg="#1a4fa0").pack(fill="x")
         self.logo_img = None
         scale = max(1.0, self.root.winfo_fpixels("1i") / 96.0)
-        target = int(30 * scale)                  # 로고 높이 (화면 배율에 맞춤)
+        target = int(20 * scale)                  # 로고 높이 (화면 배율에 맞춤)
         path, custom = find_logo(target)
         if path:
             try:
@@ -410,9 +414,9 @@ class MacroApp:
                     if factor > 1:
                         img = img.subsample(factor, factor)
                 self.logo_img = img
-                tk.Label(head, image=img, bg=BG).pack(side="left", padx=(0, 16))
+                tk.Label(head, image=img, bg=BG).pack(side="left", padx=(0, 10))
                 tk.Frame(head, width=2, bg="#cccccc").pack(side="left", fill="y",
-                                                           padx=(0, 16), pady=4)
+                                                           padx=(0, 10), pady=3)
             except tk.TclError:
                 self.logo_img = None
         icon = find_icon()
@@ -424,30 +428,30 @@ class MacroApp:
                 pass
         if self.logo_img is None:
             tk.Label(head, text=COMPANY, bg=BG, fg="#1a4fa0",
-                     font=("맑은 고딕", 20, "bold")).pack(side="left", padx=(0, 14))
+                     font=("맑은 고딕", 13, "bold")).pack(side="left", padx=(0, 10))
         tk.Label(head, text="UV 인쇄 클릭 자동화", bg=BG, fg="#222",
-                 font=("맑은 고딕", 18, "bold")).pack(side="left")
+                 font=("맑은 고딕", 12, "bold")).pack(side="left")
         tk.Label(head, text="[made by. 양원식]", bg=BG, fg="#777",
-                 font=("맑은 고딕", 12, "bold")).pack(side="left", padx=(8, 0), pady=(6, 0))
+                 font=("맑은 고딕", 8, "bold")).pack(side="left", padx=(6, 0), pady=(3, 0))
 
     def _build_bottom(self):
         style = ttk.Style()
-        style.configure("Pause.TButton", font=("맑은 고딕", 12, "bold"), padding=8)
-        style.configure("Cnt.TButton", font=("맑은 고딕", 11, "bold"), padding=(4, 6))
+        style.configure("Pause.TButton", font=("맑은 고딕", 10, "bold"), padding=(4, 3))
+        style.configure("Cnt.TButton", font=("맑은 고딕", 9, "bold"), padding=(2, 2))
 
         # 맨 아래 상태줄
         self.status = tk.StringVar(value="준비")
         self.status_bar = ttk.Label(self.root, textvariable=self.status, relief="sunken",
-                                    anchor="w", padding=(8, 3))
+                                    anchor="w", padding=(6, 1))
         self.status_bar.pack(fill="x", side="bottom")
 
         # 생산 카운터
-        self.tools = ttk.Frame(self.root, padding=(10, 0, 10, 6))
+        self.tools = ttk.Frame(self.root, padding=(8, 0, 8, 4))
         self.tools.pack(fill="x", side="bottom")
         self._build_counter(self.tools)
 
         # 실행 버튼 줄
-        run = ttk.Frame(self.root, padding=(10, 4, 10, 8))
+        run = ttk.Frame(self.root, padding=(8, 3, 8, 4))
         run.pack(fill="x", side="bottom")
         self.start_btn = ttk.Button(run, text="▶ 시작 (F9)", style="Start.TButton",
                                     command=self.start)
@@ -461,7 +465,7 @@ class MacroApp:
         self.pause_btn.state(["disabled"])
 
         # 실행 옵션 줄
-        opt = ttk.Frame(self.root, padding=(10, 8, 10, 0))
+        opt = ttk.Frame(self.root, padding=(8, 4, 8, 0))
         opt.pack(fill="x", side="bottom")
         ttk.Label(opt, text="반복 횟수").pack(side="left")
         self.repeat_var = tk.StringVar(value="1")
@@ -490,12 +494,12 @@ class MacroApp:
 
     # ------------------------------------------------------------ 카운터
     def _build_counter(self, parent):
-        box = ttk.LabelFrame(parent, text=" 생산 카운터 ", padding=8)
+        box = ttk.LabelFrame(parent, text=" 생산 카운터 ", padding=(6, 2, 6, 4))
         box.pack(fill="both", expand=True)
 
         # 검은 화면: 번 수 / 총 수량
         BG, FG, FG2 = "#10261c", "#4dff9a", "#b9f5d0"
-        panel = tk.Frame(box, bg=BG, padx=16, pady=6)
+        panel = tk.Frame(box, bg=BG, padx=10, pady=2)
         panel.pack(fill="x")
         self.count_widgets = []
         for col, (title, attr) in enumerate((("완료 횟수", "plates_var"),
@@ -503,25 +507,25 @@ class MacroApp:
             cell = tk.Frame(panel, bg=BG)
             cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 20, 0))
             panel.columnconfigure(col, weight=1, uniform="cnt")
-            tk.Label(cell, text=title, bg=BG, fg=FG2, font=("맑은 고딕", 10)).pack(anchor="w")
+            tk.Label(cell, text=title, bg=BG, fg=FG2, font=("맑은 고딕", 8)).pack(side="left", anchor="n", pady=(4, 0))
             var = tk.StringVar()
             setattr(self, attr, var)
             lbl = tk.Label(cell, textvariable=var, bg=BG, fg=FG, anchor="e",
-                           font=("맑은 고딕", 34, "bold"))
-            lbl.pack(fill="x")
+                           font=("맑은 고딕", 20, "bold"))
+            lbl.pack(side="right", fill="x", expand=True)
             self.count_widgets.append(lbl)
 
         # 한 번 소재 수량 + 세는 방법 안내
         row1 = ttk.Frame(box)
-        row1.pack(fill="x", pady=(8, 4))
-        ttk.Label(row1, text="한 번에 소재", font=("맑은 고딕", 11, "bold")).pack(side="left")
+        row1.pack(fill="x", pady=(3, 2))
+        ttk.Label(row1, text="한 번에 소재", font=("맑은 고딕", 9, "bold")).pack(side="left")
         self.per_plate_var = tk.StringVar(value="1")
         ttk.Spinbox(row1, from_=1, to=9999, textvariable=self.per_plate_var, width=6,
-                    font=("맑은 고딕", 12, "bold"), justify="center",
+                    font=("맑은 고딕", 10, "bold"), justify="center",
                     command=self._per_plate_changed).pack(side="left", padx=6)
-        ttk.Label(row1, text="장", font=("맑은 고딕", 11, "bold")).pack(side="left")
+        ttk.Label(row1, text="장", font=("맑은 고딕", 9, "bold")).pack(side="left")
         self.per_plate_var.trace_add("write", lambda *a: self._per_plate_changed())
-        self.count_state = ttk.Label(row1, text="", foreground="#1b7a3d")
+        self.count_state = ttk.Label(row1, text="", foreground="#1b7a3d", font=("맑은 고딕", 8))
         self.count_state.pack(side="left", padx=(18, 0))
 
         # 버튼
@@ -586,11 +590,11 @@ class MacroApp:
 
     def _update_count_rule(self):
         if self.count_paused:
-            text, color = "일시정지 — 자동으로 세지 않음 (＋1/－1은 가능)", "#b36b00"
+            text, color = "일시정지 — 자동으로 세지 않음", "#b36b00"
         elif any(is_end(s) for s in self.macro["steps"]):
-            text, color = "▶ 메모가 END 인 단계가 실행되면 +1번", "#1b7a3d"
+            text, color = "▶ END 단계 실행 시 +1번", "#1b7a3d"
         else:
-            text, color = "※ 메모에 END 가 없어서 세지 않음 (끝나는 단계 메모에 END 입력)", "#b00020"
+            text, color = "※ END 없음 — 세지 않음 (F12 로 END 표시)", "#b00020"
         self.count_state.config(text=text, foreground=color)
 
     def _add_count(self, n, manual=False):
@@ -669,7 +673,7 @@ class MacroApp:
         if self.running or self.recording:
             return
         x, y = pyautogui.position()
-        self._insert_step(new_step("click", x, y, delay=0.5))
+        self._insert_step(new_step("click", x, y))
         self.status.set(f"클릭 위치 추가: ({x}, {y})  — 메모를 적어두면 나중에 알아보기 쉽습니다.")
 
     def _toggle_end_here(self):
@@ -989,7 +993,7 @@ class MacroApp:
                 self._refresh_tree(select=[len(steps) - 1])
                 return
             prev["delay"] = round(max(0.2, gap), 1)
-        steps.append(new_step(kind, x, y, delay=0.5))
+        steps.append(new_step(kind, x, y))
         self.rec_last_time = t
         self._mark_dirty()
         self._refresh_tree(select=[len(steps) - 1])
