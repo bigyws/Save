@@ -37,6 +37,14 @@ jobs:
         shell: pwsh
         run: Get-Item dist/UV-Click-Macro.exe | Format-List Name, Length
 
+      - name: Read version
+        id: ver
+        shell: pwsh
+        run: |
+          $m = Select-String -Path macro_app.py -Pattern '^VERSION = "(.+)"' | Select-Object -First 1
+          $v = if ($m) { $m.Matches[0].Groups[1].Value } else { "" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
       - uses: actions/upload-artifact@v4
         with:
           name: UV-Click-Macro
@@ -46,9 +54,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: uv-click-macro-latest
-          name: UV 인쇄 클릭 자동화 (exe)
+          name: UV 인쇄 클릭 자동화 ${{ steps.ver.outputs.version }} (exe)
           target_commitish: ${{ github.sha }}
           body: |
+            버전: ${{ steps.ver.outputs.version }}  (업그레이드 내역은 프로그램 맨 위 [made by. 양원식 …] 를 누르면 보입니다)
             UV-Click-Macro.exe 를 받아서 더블클릭하면 바로 실행됩니다 (Python 설치 필요 없음).
             저장한 작업은 exe 옆의 macros 폴더에 저장되므로, exe 를 바탕화면이나 전용 폴더에 두고 쓰세요.
           files: uv-click-macro/dist/UV-Click-Macro.exe

@@ -44,8 +44,34 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-APP_TITLE = "UV 인쇄 클릭 자동화 [made by. 양원식]"
+VERSION = "v.19"
+CREDIT = f"made by. 양원식 {VERSION}"
+APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
+
+# 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
+CHANGELOG = [
+    ("v.19", "11/21", "녹화 단축키 F4 로 변경, 버전 표시와 업그레이드 내역 보기 추가"),
+    ("v.18", "11/21", "오른쪽 버튼 한 줄 배치, 창 가로 폭 줄이기"),
+    ("v.17", "11/21", "컴팩트 화면 적용, 녹화 단축키 F3"),
+    ("v.16", "11/21", "녹화 단축키 F7 (한 번 누르면 녹화, 다시 누르면 끝)"),
+    ("v.15", "11/21", "컴팩트 화면, 후대기 기본 0.2초"),
+    ("v.14", "11/21", "총 소재 수량 ＋1장 / －1장 버튼"),
+    ("v.13", "11/20", "F12 는 번호 추가 없이 END 만 켜기/끄기"),
+    ("v.12", "11/20", "F12 같은 위치에서 다시 누르면 END 해제"),
+    ("v.11", "11/20", "F12 로 END 표시"),
+    ("v.10", "11/20", "메모에 END 가 없으면 카운트 안 함"),
+    ("v.9", "11/20", "[made by. 양원식] 표시"),
+    ("v.8", "11/20", "SHINSHIN 로고, SS 아이콘"),
+    ("v.7", "11/20", "맨 위 제목줄 추가"),
+    ("v.6", "11/20", "계산식 문구 숨기기, 소리 알림 삭제"),
+    ("v.5", "11/20", "카운터 단위 '판' → '번'"),
+    ("v.4", "11/20", "END 메모로 카운트, 한 번에 소재 수량, 계산기 삭제"),
+    ("v.3", "11/19", "생산 카운터, 일시정지(F11), 계산기 추가"),
+    ("v.2", "11/19", "Python 없이 실행되는 exe 파일"),
+    ("v.1", "11/19", "실행 파일 이름 정리 (압축 풀 때 글자 깨짐 방지)"),
+    ("v.0", "11/19", "처음 만듦: 위치 찍기(F8), 클릭 녹화, 작업 저장, 시작/정지"),
+]
 if getattr(sys, "frozen", False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
@@ -434,8 +460,43 @@ class MacroApp:
                      font=("맑은 고딕", 13, "bold")).pack(side="left", padx=(0, 10))
         tk.Label(head, text="UV 인쇄 클릭 자동화", bg=BG, fg="#222",
                  font=("맑은 고딕", 12, "bold")).pack(side="left")
-        tk.Label(head, text="[made by. 양원식]", bg=BG, fg="#777",
-                 font=("맑은 고딕", 8, "bold")).pack(side="left", padx=(6, 0), pady=(3, 0))
+        credit = tk.Label(head, text=f"[{CREDIT}]", bg=BG, fg="#777", cursor="hand2",
+                          font=("맑은 고딕", 8, "bold"))
+        credit.pack(side="left", padx=(6, 0), pady=(3, 0))
+        credit.bind("<Button-1>", lambda e: self._show_changelog())
+        credit.bind("<Enter>", lambda e: credit.config(fg="#1a4fa0"))
+        credit.bind("<Leave>", lambda e: credit.config(fg="#777"))
+
+    def _show_changelog(self):
+        """업그레이드 내역 창"""
+        win = tk.Toplevel(self.root)
+        win.title(f"업그레이드 내역 — {VERSION}")
+        win.transient(self.root)
+        win.resizable(False, True)
+        frm = ttk.Frame(win, padding=8)
+        frm.pack(fill="both", expand=True)
+        ttk.Label(frm, text=f"UV 인쇄 클릭 자동화  {CREDIT}",
+                  font=("맑은 고딕", 10, "bold")).pack(anchor="w", pady=(0, 6))
+        box = ttk.Frame(frm)
+        box.pack(fill="both", expand=True)
+        txt = tk.Text(box, width=64, height=16, font=("맑은 고딕", 9), relief="flat",
+                      bg="#fafafa", padx=8, pady=6, wrap="word", spacing1=2, spacing3=2)
+        sb = ttk.Scrollbar(box, orient="vertical", command=txt.yview)
+        txt.configure(yscrollcommand=sb.set)
+        txt.pack(side="left", fill="both", expand=True)
+        sb.pack(side="left", fill="y")
+        txt.tag_configure("ver", foreground="#1a4fa0", font=("맑은 고딕", 9, "bold"))
+        txt.tag_configure("now", foreground="#b00020", font=("맑은 고딕", 9, "bold"))
+        txt.tag_configure("date", foreground="#888")
+        for i, (ver, date, note) in enumerate(CHANGELOG):
+            txt.insert("end", f"{ver:<6}", "now" if i == 0 else "ver")
+            txt.insert("end", f" {date}  ", "date")
+            txt.insert("end", note + ("  ← 지금 버전" if i == 0 else "") + "\n")
+        txt.configure(state="disabled")
+        ttk.Button(frm, text="닫기", command=win.destroy).pack(pady=(6, 0))
+        win.bind("<Escape>", lambda e: win.destroy())
+        win.attributes("-topmost", bool(self.topmost.get()))
+        win.focus_set()
 
     def _build_bottom(self):
         style = ttk.Style()
