@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.21"
+VERSION = "v.22"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.22", "11/22", "납품수량 입력 (채우면 총 소재 수량 빨간색), F9 시작 전 확인 창"),
     ("v.21", "11/21", "위쪽 버튼 줄 오른쪽 끝을 목록 오른쪽 끝에 맞춤"),
     ("v.20", "11/21", "위쪽 새 작업·저장·다른 이름·삭제 버튼 넓게, 버튼 이름 '녹화 F4'"),
     ("v.19", "11/21", "녹화 단축키 F4 로 변경, 버전 표시와 업그레이드 내역 보기 추가"),
@@ -304,6 +305,73 @@ class StepDialog(tk.Toplevel):
         self.destroy()
 
 
+class StartConfirm(tk.Toplevel):
+    """F9 / 시작 누르면 먼저 뜨는 확인 창"""
+
+    def __init__(self, app):
+        super().__init__(app.root)
+        self.app = app
+        self.result = False
+        self.title("시작 확인")
+        self.resizable(False, False)
+        self.transient(app.root)
+        self.attributes("-topmost", True)
+        m = app.macro
+        n = app._per_plate()
+        frm = tk.Frame(self, bg="#ffffff", padx=18, pady=12)
+        frm.pack(fill="both", expand=True)
+        tk.Label(frm, text="⚠ 자동 클릭을 시작할까요?", bg="#ffffff", fg="#b00020",
+                 font=("맑은 고딕", 13, "bold")).pack(anchor="w")
+        tk.Label(frm, text="인쇄 프로그램 창과 소재 위치를 확인하세요.", bg="#ffffff", fg="#555",
+                 font=("맑은 고딕", 9)).pack(anchor="w", pady=(2, 8))
+        info = tk.Frame(frm, bg="#f4f6fa", padx=12, pady=8)
+        info.pack(fill="x")
+        rows = [("작업", m["name"] or "(저장 안 됨)"),
+                ("반복", f'{m["repeat"]}회  (한 번에 소재 {n}장)'),
+                ("이번에 추가", f'{m["repeat"] * n:,}장' if any(is_end(s) for s in m["steps"])
+                 else "END 없음 — 세지 않음"),
+                ("총 소재 수량", f"{app._total():,}장")]
+        if app.target:
+            left = max(0, app.target - app._total())
+            rows.append(("납품수량", f"{app.target:,}장  (남은 수량 {left:,}장)"))
+        for r, (k, v) in enumerate(rows):
+            tk.Label(info, text=k, bg="#f4f6fa", fg="#666", font=("맑은 고딕", 9)).grid(
+                row=r, column=0, sticky="w", padx=(0, 14), pady=1)
+            tk.Label(info, text=v, bg="#f4f6fa", fg="#111", font=("맑은 고딕", 9, "bold")).grid(
+                row=r, column=1, sticky="w", pady=1)
+        if app._target_reached():
+            tk.Label(frm, text="※ 이미 납품수량을 채웠습니다!", bg="#ffffff", fg="#d0002a",
+                     font=("맑은 고딕", 10, "bold")).pack(anchor="w", pady=(8, 0))
+        btns = tk.Frame(frm, bg="#ffffff")
+        btns.pack(fill="x", pady=(12, 0))
+        ttk.Button(btns, text="▶ 시작 (Enter / F9)", style="Start.TButton",
+                   command=self.ok).pack(side="left", expand=True, fill="x", padx=(0, 4))
+        ttk.Button(btns, text="취소 (Esc)", style="Stop.TButton",
+                   command=self.cancel).pack(side="left", expand=True, fill="x", padx=(4, 0))
+        self.bind("<Return>", lambda e: self.ok())
+        self.bind("<Escape>", lambda e: self.cancel())
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.update_idletasks()
+        # 프로그램 창 가운데에 띄우기
+        x = app.root.winfo_rootx() + (app.root.winfo_width() - self.winfo_width()) // 2
+        y = app.root.winfo_rooty() + (app.root.winfo_height() - self.winfo_height()) // 3
+        self.geometry(f"+{max(0, x)}+{max(0, y)}")
+        try:
+            self.bell()
+        except tk.TclError:
+            pass
+        self.grab_set()
+        self.focus_force()
+
+    def ok(self):
+        self.result = True
+        self.destroy()
+
+    def cancel(self):
+        self.result = False
+        self.destroy()
+
+
 class MacroApp:
     def __init__(self, root):
         self.root = root
@@ -325,7 +393,9 @@ class MacroApp:
         self.pause_event = threading.Event()
         self.settings = load_settings()
         self.count = int(self.settings.get("count", 0))
-        self.extra = int(self.settings.get("extra", 0))   # 총 장수 직접 조정분 (＋/－장)
+        self.extra = int(self.settings.get("extra", 0))
+        self.target = int(self.settings.get("target", 0))  # 납품수량 (0 = 안 정함)
+        self._confirm_dlg = None   # 총 장수 직접 조정분 (＋/－장)
         self.count_paused = False
 
         self.macro = {"name": "", "repeat": 1, "start_wait": 2.0, "per_plate": 1, "steps": []}
@@ -577,7 +647,10 @@ class MacroApp:
             cell = tk.Frame(panel, bg=BG)
             cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 20, 0))
             panel.columnconfigure(col, weight=1, uniform="cnt")
-            tk.Label(cell, text=title, bg=BG, fg=FG2, font=("맑은 고딕", 8)).pack(side="left", anchor="n", pady=(4, 0))
+            tlbl = tk.Label(cell, text=title, bg=BG, fg=FG2, font=("맑은 고딕", 8), justify="left")
+            tlbl.pack(side="left", anchor="n", pady=(4, 0))
+            if attr == "total_var":
+                self.total_title = tlbl
             var = tk.StringVar()
             setattr(self, attr, var)
             lbl = tk.Label(cell, textvariable=var, bg=BG, fg=FG, anchor="e",
@@ -595,8 +668,15 @@ class MacroApp:
                     command=self._per_plate_changed).pack(side="left", padx=6)
         ttk.Label(row1, text="장", font=("맑은 고딕", 9, "bold")).pack(side="left")
         self.per_plate_var.trace_add("write", lambda *a: self._per_plate_changed())
+        ttk.Label(row1, text="납품수량", font=("맑은 고딕", 9, "bold")).pack(side="left", padx=(14, 0))
+        self.target_var = tk.StringVar(value=str(self.target) if self.target else "")
+        ttk.Spinbox(row1, from_=0, to=999999, textvariable=self.target_var, width=7,
+                    font=("맑은 고딕", 10, "bold"), justify="center",
+                    command=self._target_changed).pack(side="left", padx=6)
+        ttk.Label(row1, text="장", font=("맑은 고딕", 9, "bold")).pack(side="left")
+        self.target_var.trace_add("write", lambda *a: self._target_changed())
         self.count_state = ttk.Label(row1, text="", foreground="#1b7a3d", font=("맑은 고딕", 8))
-        self.count_state.pack(side="left", padx=(18, 0))
+        self.count_state.pack(side="right")
 
         # 버튼
         row2 = ttk.Frame(box)
@@ -641,11 +721,32 @@ class MacroApp:
             self._mark_dirty()
         self._update_count_display()
 
+    def _target_changed(self):
+        try:
+            t = max(0, int(float(self.target_var.get() or 0)))
+        except (ValueError, tk.TclError):
+            t = 0
+        if t != self.target:
+            self.target = t
+            self.settings["target"] = t
+            save_settings(self.settings)
+        self._update_count_display()
+
+    def _target_reached(self):
+        return self.target > 0 and self._total() >= self.target
+
     def _update_count_display(self):
-        n = self._per_plate()
         self.plates_var.set(f"{self.count:,} 번")
         self.total_var.set(f"{self._total():,} 장")
+        self.total_title.config(text="총 소재 수량" + (f"\n납품 {self.target:,}장" if self.target else ""))
+        self._apply_count_colors()
         self._update_count_rule()
+
+    def _apply_count_colors(self):
+        base = "#ffc94d" if self.count_paused else "#4dff9a"
+        self.count_widgets[0].config(fg=base)
+        # 납품수량을 채우면 총 소재 수량을 빨간색으로
+        self.count_widgets[1].config(fg="#ff4d4d" if self._target_reached() else base)
 
     def _total(self):
         return max(0, self.count * self._per_plate() + self.extra)
@@ -661,6 +762,8 @@ class MacroApp:
     def _update_count_rule(self):
         if self.count_paused:
             text, color = "일시정지 — 자동으로 세지 않음", "#b36b00"
+        elif self._target_reached():
+            text, color = "■ 납품수량 완료!", "#d0002a"
         elif any(is_end(s) for s in self.macro["steps"]):
             text, color = "▶ END 단계 실행 시 +1번", "#1b7a3d"
         else:
@@ -678,8 +781,7 @@ class MacroApp:
     def _toggle_count_pause(self):
         self.count_paused = not self.count_paused
         self.count_pause_btn.config(text="▶ 다시 세기" if self.count_paused else "일시정지")
-        for w in self.count_widgets:
-            w.config(fg="#ffc94d" if self.count_paused else "#4dff9a")
+        self._apply_count_colors()
         self._update_count_rule()
 
     def _reset_count(self):
@@ -1074,10 +1176,23 @@ class MacroApp:
     def start(self):
         if self.running or self.recording:
             return
+        if self._confirm_dlg is not None:      # 확인 창이 떠 있을 때 F9 한 번 더 → 시작
+            self._confirm_dlg.ok()
+            return
         if not self.macro["steps"]:
             messagebox.showinfo(APP_TITLE, "등록된 단계가 없습니다.")
             return
         self._collect_options()
+        dlg = StartConfirm(self)
+        self._confirm_dlg = dlg
+        self.root.wait_window(dlg)
+        self._confirm_dlg = None
+        if not dlg.result:
+            self.status.set("시작을 취소했습니다.")
+            return
+        self._begin_run()
+
+    def _begin_run(self):
         self.running = True
         self.stop_event.clear()
         self.pause_event.clear()
