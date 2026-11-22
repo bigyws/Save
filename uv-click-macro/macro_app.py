@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.24"
+VERSION = "v.25"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.25", "11/22", "작업 중 '한 번에 소재' 수량을 바꿔도 이미 센 총 소재 수량은 그대로"),
     ("v.24", "11/22", "시작 확인 창의 남은 수량 숫자를 빨갛고 크게 표시"),
     ("v.23", "11/22", "시작 확인 창은 총 수량이 납품수량의 95% 이상일 때만 표시"),
     ("v.22", "11/22", "납품수량 입력 (채우면 총 소재 수량 빨간색), F9 시작 전 확인 창"),
@@ -407,7 +408,11 @@ class MacroApp:
         self.pause_event = threading.Event()
         self.settings = load_settings()
         self.count = int(self.settings.get("count", 0))
-        self.extra = int(self.settings.get("extra", 0))
+        self.extra = int(self.settings.get("extra", 0))    # 예전 버전 값 (옮겨오기용)
+        # 총 소재 수량은 셀 때마다 그때의 '한 번에 소재' 만큼 더해서 따로 보관
+        # → 작업 중에 한 번에 소재 수량을 바꿔도 이미 센 총 수량은 그대로
+        p = self.settings.get("pieces")
+        self.pieces = int(p) if p is not None else None
         self.target = int(self.settings.get("target", 0))  # 납품수량 (0 = 안 정함)
         self._confirm_dlg = None   # 총 장수 직접 조정분 (＋/－장)
         self.count_paused = False
@@ -425,6 +430,11 @@ class MacroApp:
             self._open_macro(list_macros()[0])
         else:
             self._new_macro(ask=False)
+        self._ready = True
+        if "pieces" not in self.settings:       # 예전 버전 숫자를 지금 값으로 고정해서 저장
+            self._set_pieces(self._total())
+            save_settings(self.settings)
+        self._update_count_display()
 
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(50, self._poll_events)
@@ -767,13 +777,22 @@ class MacroApp:
         self.count_widgets[1].config(fg="#ff4d4d" if self._target_reached() else base)
 
     def _total(self):
-        return max(0, self.count * self._per_plate() + self.extra)
+        if self.pieces is None:     # 예전 버전에서 넘어온 첫 실행: 한 번 계산해서 고정
+            v = max(0, self.count * self._per_plate() + self.extra)
+            if not getattr(self, "_ready", False):
+                return v            # 작업을 불러오기 전에는 고정하지 않음
+            self.pieces = v
+        return self.pieces
+
+    def _set_pieces(self, v):
+        self.pieces = max(0, v)
+        self.settings["pieces"] = self.pieces
+        self.settings["extra"] = 0
+        self.extra = 0
 
     def _add_extra(self, n):
         """총 소재 수량만 ＋/－ (불량·추가분 등)"""
-        base = self.count * self._per_plate()
-        self.extra = max(-base, self.extra + n)      # 총 장수가 0 밑으로 안 내려가게
-        self.settings["extra"] = self.extra
+        self._set_pieces(self._total() + n)
         save_settings(self.settings)
         self._update_count_display()
 
@@ -791,7 +810,11 @@ class MacroApp:
     def _add_count(self, n, manual=False):
         if self.count_paused and not manual:
             return
-        self.count = max(0, self.count + n)
+        total = self._total()
+        new = max(0, self.count + n)
+        # 실제로 바뀐 횟수 × 지금의 '한 번에 소재' 만큼만 총 수량에 더하고 뺌
+        self._set_pieces(total + (new - self.count) * self._per_plate())
+        self.count = new
         self.settings["count"] = self.count
         save_settings(self.settings)
         self._update_count_display()
@@ -803,13 +826,12 @@ class MacroApp:
         self._update_count_rule()
 
     def _reset_count(self):
-        if (self.count or self.extra) and not messagebox.askyesno(
+        if (self.count or self._total()) and not messagebox.askyesno(
                 APP_TITLE, f"카운터 {self.count}번 ({self._total()}장)을 0으로 되돌릴까요?"):
             return
         self.count = 0
-        self.extra = 0
+        self._set_pieces(0)
         self.settings["count"] = 0
-        self.settings["extra"] = 0
         save_settings(self.settings)
         self._update_count_display()
 
