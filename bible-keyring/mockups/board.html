@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>말씀 키링 초안</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#ECE7DE; --ink:#23262E; --sub:#6B6F78; --line:#DCD6CB;
+    --paper:#FAF8F4; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--board);font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .board{width:2400px;padding:72px 80px 64px}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:56px}
+  .head h1{font-size:44px;font-weight:800;letter-spacing:-1px}
+  .head h1 span{font-family:'Gowun Batang',serif;font-weight:700;color:#8A6A3E}
+  .head p{font-size:19px;color:var(--sub);margin-top:10px}
+  .tag{display:inline-block;background:#23262E;color:#fff;font-size:14px;font-weight:700;padding:6px 14px;border-radius:99px;letter-spacing:1px}
+  .row{display:flex;gap:56px;align-items:flex-start}
+  .col{width:414px}
+  .step{display:flex;gap:12px;align-items:baseline;margin-bottom:18px;min-height:56px}
+  .step b{font-size:15px;font-weight:800;color:#8A6A3E;letter-spacing:1px}
+  .step div{font-size:19px;font-weight:700;line-height:1.35}
+  .step small{display:block;font-size:14px;font-weight:400;color:var(--sub);margin-top:2px}
+
+  /* phone */
+  .phone{width:414px;height:868px;border-radius:64px;background:#15171C;padding:12px;box-shadow:0 30px 60px -20px rgba(40,30,20,.35),0 0 0 2px #2c2f36 inset}
+  .screen{width:390px;height:844px;border-radius:52px;overflow:hidden;position:relative;background:var(--paper)}
+  .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:120px;height:34px;border-radius:20px;background:#000;z-index:20}
+  .status{height:50px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0 34px;font-size:16px;font-weight:700;position:relative;z-index:10}
+  .status .ic{display:flex;gap:6px;align-items:center}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:6px 22px 0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:50%;border:1.6px dashed #B9A88C;display:grid;place-items:center;font-size:9px;font-weight:700;color:#A08A66;background:#F3EEE5}
+  .brand .nm{font-size:15px;font-weight:700}
+  .brand .nm small{display:block;font-size:11px;font-weight:500;color:var(--sub);margin-top:-1px}
+  .iconbtn{width:38px;height:38px;border-radius:50%;background:#EFEBE4;display:grid;place-items:center}
+  .home{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#1d1f24}
+
+  /* verse screen */
+  .dateline{display:flex;justify-content:space-between;align-items:center;padding:16px 24px 10px}
+  .dateline .d{font-size:13px;color:var(--sub);font-weight:500}
+  .dateline .d b{display:block;font-size:20px;color:var(--ink);font-weight:800;margin-top:2px;letter-spacing:-.4px}
+  .streak{font-size:12px;font-weight:700;padding:6px 11px;border-radius:99px;background:#fff;border:1px solid var(--line)}
+  .vcard{margin:0 20px;height:486px;border-radius:30px;overflow:hidden;position:relative;box-shadow:0 18px 36px -18px rgba(30,25,15,.5)}
+  .vcard svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .vcard .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 54%,rgba(12,16,26,.55) 72%,rgba(12,16,26,.86) 100%)}
+  .chips{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between}
+  .chip{font-size:11.5px;font-weight:700;color:#fff;padding:6px 11px;border-radius:99px;background:rgba(20,24,34,.28);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.35);letter-spacing:.5px}
+  .vtext{position:absolute;left:24px;right:24px;bottom:24px;color:#fff}
+  .vtext q{display:block;font-family:'Gowun Batang',serif;font-weight:700;font-size:23px;line-height:1.62;letter-spacing:-.3px;quotes:none;word-break:keep-all;text-shadow:0 1px 10px rgba(0,0,0,.25)}
+  .vtext q .dim{opacity:.5}
+  .vtext q .now{background:linear-gradient(transparent 62%,rgba(255,214,120,.55) 62%)}
+  .vtext .ref{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;font-weight:500;opacity:.92;letter-spacing:.5px}
+  .vtext .ref:before{content:"";width:22px;height:1.5px;background:#fff;opacity:.8}
+
+  .player{margin:16px 20px 0;background:#fff;border-radius:22px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #EEE9E1}
+  .play{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex:none;box-shadow:0 8px 18px -8px currentColor}
+  .pinfo{flex:1;min-width:0}
+  .pinfo .t{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+  .pinfo .t span{font-weight:500;color:var(--sub);font-size:12px}
+  .wave{display:flex;gap:2.5px;align-items:center;height:26px;margin-top:6px}
+  .wave i{display:block;width:3px;border-radius:2px;background:#DAD5CC}
+  .speed{font-size:12px;font-weight:700;padding:6px 9px;border-radius:10px;background:#F2EFE9;flex:none}
+  .actions{display:flex;justify-content:space-between;align-items:center;padding:14px 26px 0}
+  .actions .a{display:flex;gap:18px}
+  .actions .a span{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:#4A4E57}
+  .hint{font-size:12px;color:var(--sub)}
+  .toast{position:absolute;top:54px;left:20px;right:20px;z-index:15;background:#23262E;color:#fff;border-radius:18px;padding:15px 14px 17px;display:flex;gap:12px;align-items:center;box-shadow:0 12px 30px -10px rgba(0,0,0,.4)}
+  .toast .ti{width:34px;height:34px;border-radius:10px;background:#3A3F4B;display:grid;place-items:center;flex:none}
+  .toast b{display:block;font-size:13.5px}
+  .toast small{font-size:12px;opacity:.75}
+
+  /* tag screen */
+  .tagwrap{padding:4px 28px 0;text-align:center}
+  .hero{height:390px;position:relative;margin:4px -8px 0}
+  .tagwrap h2{font-size:26px;font-weight:800;letter-spacing:-.8px;line-height:1.38;margin-top:2px}
+  .tagwrap p{font-size:14.5px;color:var(--sub);margin-top:10px;line-height:1.6}
+  .today{margin-top:24px;background:#fff;border-radius:20px;padding:15px 16px;display:flex;align-items:center;gap:14px;text-align:left;border:1px solid #EEE9E1}
+  .today .lk{width:44px;height:56px;border-radius:10px;background:linear-gradient(160deg,#E8E1D4,#D8CDB9);display:grid;place-items:center;flex:none}
+  .today b{font-size:14.5px;display:block}
+  .today small{font-size:12.5px;color:var(--sub)}
+  .qr{margin-top:18px;font-size:13px;color:var(--sub)}
+  .qr u{color:var(--ink);font-weight:700;text-underline-offset:3px}
+
+  /* collection */
+  .ctitle{padding:14px 24px 0}
+  .ctitle h3{font-size:26px;font-weight:800;letter-spacing:-.6px}
+  .ctitle p{font-size:13px;color:var(--sub);margin-top:4px}
+  .week{margin:16px 20px 0;background:#23262E;border-radius:22px;padding:16px 18px;color:#fff}
+  .week .top{display:flex;justify-content:space-between;align-items:center}
+  .week .top b{font-size:16px}
+  .week .top span{font-size:12px;opacity:.7}
+  .days{display:flex;justify-content:space-between;margin-top:14px}
+  .days div{text-align:center;font-size:11px;opacity:.85;width:36px}
+  .days i{display:grid;place-items:center;width:32px;height:32px;margin:6px auto 0;border-radius:50%;border:1.5px dashed rgba(255,255,255,.3);font-style:normal;font-size:12px;font-weight:700}
+  .days i.on{border:none;background:#E7C784;color:#23262E}
+  .days i.td{border:1.5px solid #E7C784;color:#E7C784}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 20px 0}
+  .mini{height:150px;border-radius:16px;overflow:hidden;position:relative;background:#E9E4DA}
+  .mini svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .mini .sh{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,14,24,.75))}
+  .mini .r{position:absolute;left:10px;bottom:9px;color:#fff;font-size:11px;font-weight:700}
+  .mini .r small{display:block;font-weight:400;opacity:.8;font-size:10px}
+  .mini.lock{display:grid;place-items:center;text-align:center;color:#A39A8A;font-size:11px;font-weight:700;border:1.5px dashed #D3CABA;background:#F1EDE5}
+  .mini.lock.next{color:#8A6A3E;border-color:#C9B48A;background:#F6EFE1}
+
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(250,248,244,.96);border-top:1px solid #E6E1D8;display:flex;justify-content:space-around;padding-top:10px}
+  .tabbar div{text-align:center;font-size:10.5px;color:#9A9590;font-weight:500}
+  .tabbar div.on{color:var(--ink);font-weight:700}
+  .tabbar svg{display:block;margin:0 auto 3px}
+
+  .notes{margin-top:56px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+  .note{background:var(--card);border-radius:22px;padding:22px 24px;border:1px solid var(--line)}
+  .note b{display:block;font-size:16px;margin-bottom:8px}
+  .note p{font-size:14px;color:var(--sub);line-height:1.65}
+  .swatches{display:flex;gap:8px;margin-top:10px}
+  .swatches i{width:28px;height:28px;border-radius:8px;display:block}
+</style>
+</head>
+<body>
+<div class="board" id="board">
+  <div class="head">
+    <div>
+      <span class="tag">DRAFT v0.1</span>
+      <h1 style="margin-top:16px">말씀 키링 <span>· 오늘의 한 구절</span></h1>
+      <p>키링(NFC)에 휴대폰을 대면 하루 한 구절이 카드로 열리고, 구절의 비유를 담은 일러스트와 함께 읽어 줍니다.</p>
+    </div>
+    <p style="text-align:right">앱 화면 디자인 초안 · 교회 마크/로고 자리 포함(점선 영역)</p>
+  </div>
+  <div class="row" id="row"></div>
+  <div class="notes">
+    <div class="note"><b>① 하루 한 번, 새 카드</b><p>키링을 대면 그날의 구절이 열립니다. 같은 날 다시 대면 같은 카드, 다음 날 대면 새 구절과 새 그림이 나옵니다.</p></div>
+    <div class="note"><b>② 구절을 닮은 배경 그림</b><p>“목자” → 초장과 양, “독수리” → 산 위를 나는 독수리, “등불” → 밤길을 비추는 등불처럼 구절의 비유를 그림으로 표현합니다.</p></div>
+    <div class="note"><b>③ 읽어주기</b><p>재생 버튼을 누르면 구절을 소리 내어 읽어 주고, 읽는 부분이 카드 위에서 표시됩니다. 속도 조절 가능.</p></div>
+    <div class="note"><b>④ 교회 브랜딩 자리</b><p>상단 점선 원에 교회 마크, 이름 자리에 교회명이 들어갑니다. 키링 뒷면에도 같은 마크를 새길 예정.</p>
+      <div class="swatches"><i style="background:#4E8B5C"></i><i style="background:#3E5C9A"></i><i style="background:#C9973F"></i><i style="background:#23262E"></i><i style="background:#FAF8F4;border:1px solid #ddd"></i></div></div>
+  </div>
+</div>
+
+<script>
+/* ---------- icons ---------- */
+const I = {
+  sig:`<svg width="18" height="12" viewBox="0 0 18 12"><g fill="#111"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>`,
+  wifi:`<svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5l2.4-2.9a3.6 3.6 0 0 0-4.8 0zM3.6 6.2a6.6 6.6 0 0 1 8.8 0l1.5-1.8a9 9 0 0 0-11.8 0zM.6 2.6a11 11 0 0 1 14.8 0L16 1.9A12 12 0 0 0 0 1.9z" fill="#111"/></svg>`,
+  bat:`<svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="#111" opacity=".4"/><rect x="2" y="2" width="18" height="9" rx="2" fill="#111"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" fill="#111" opacity=".5"/></svg>`,
+  book:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#23262E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M12 7v6M9 10h6"/></svg>`,
+  menu:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#23262E" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>`,
+  playW:`<svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#fff"/></svg>`,
+  pauseW:`<svg width="22" height="22" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.3" fill="#fff"/><rect x="14" y="5" width="4" height="14" rx="1.3" fill="#fff"/></svg>`,
+  heart:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4E57" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
+  heartF:`<svg width="18" height="18" viewBox="0 0 24 24" fill="#E0605A"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`,
+  share:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4E57" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>`,
+  save:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A4E57" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`,
+  nfc:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>`,
+  lock:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`,
+};
+
+/* ---------- illustrations (viewBox 360x500) ---------- */
+function sheep(x,y,s,flip){
+  const k = flip?-s:s;
+  return `<g transform="translate(${x},${y}) scale(${k},${s})">
+    <ellipse cx="2" cy="24" rx="24" ry="4" fill="#2f5a34" opacity=".18"/>
+    <g fill="#4a3f38"><rect x="-13" y="8" width="3.4" height="14" rx="1.7"/><rect x="-5" y="9" width="3.4" height="14" rx="1.7"/><rect x="6" y="9" width="3.4" height="14" rx="1.7"/><rect x="13" y="8" width="3.4" height="14" rx="1.7"/></g>
+    <g fill="#FFFBF2"><circle cx="-13" cy="1" r="10"/><circle cx="-2" cy="-6" r="12"/><circle cx="11" cy="-3" r="11"/><circle cx="-6" cy="7" r="10"/><circle cx="8" cy="7" r="10"/><circle cx="17" cy="4" r="8"/></g>
+    <g fill="#EDE5D4" opacity=".8"><circle cx="-8" cy="10" r="6"/><circle cx="6" cy="11" r="6"/></g>
+    <ellipse cx="25" cy="-1" rx="7.5" ry="9.5" transform="rotate(22 25 -1)" fill="#4a3f38"/>
+    <ellipse cx="19" cy="-8" rx="5" ry="2.6" transform="rotate(-25 19 -8)" fill="#4a3f38"/>
+    <circle cx="27.5" cy="-3" r="1.2" fill="#fff"/>
+  </g>`;
+}
+function artShepherd(p){
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6E3C4"/><stop offset=".55" stop-color="#FAD7AE"/><stop offset="1" stop-color="#F6C7A0"/></linearGradient>
+    <radialGradient id="${p}sun"><stop offset="0" stop-color="#FFF7E2"/><stop offset=".35" stop-color="#FFF1D2" stop-opacity=".9"/><stop offset="1" stop-color="#FFE7C4" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${p}h1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C5D9A6"/><stop offset="1" stop-color="#A9C98E"/></linearGradient>
+    <linearGradient id="${p}h2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#97C384"/><stop offset="1" stop-color="#7DB06F"/></linearGradient>
+    <linearGradient id="${p}h3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FAA69"/><stop offset="1" stop-color="#4F8C55"/></linearGradient>
+  </defs>
+  <rect width="360" height="500" fill="url(#${p}sky)"/>
+  <circle cx="246" cy="128" r="120" fill="url(#${p}sun)"/>
+  <circle cx="246" cy="128" r="38" fill="#FFF6E0"/>
+  <g fill="none" stroke="#9C7A62" stroke-width="2" stroke-linecap="round" opacity=".7">
+    <path d="M64 92q7-7 14 0q7-7 14 0"/><path d="M104 70q5-5 10 0q5-5 10 0"/><path d="M86 118q4-4 8 0q4-4 8 0"/></g>
+  <g fill="#FFFFFF" opacity=".75"><ellipse cx="80" cy="160" rx="46" ry="11"/><ellipse cx="104" cy="152" rx="26" ry="11"/><ellipse cx="300" cy="200" rx="40" ry="8"/></g>
+  <path d="M0 218C70 186 140 196 210 212S320 196 360 204V500H0Z" fill="url(#${p}h1)"/>
+  <path d="M0 262C80 232 170 262 250 246S330 228 360 238V500H0Z" fill="url(#${p}h2)"/>
+  <g transform="translate(296 222)"><rect x="-3" y="0" width="6" height="26" rx="2" fill="#7A5A40"/><circle cx="0" cy="-10" r="17" fill="#5E9A5F"/><circle cx="-12" cy="-2" r="12" fill="#5E9A5F"/><circle cx="12" cy="-1" r="12" fill="#548E56"/></g>
+  <path d="M0 312C100 284 200 322 360 292V500H0Z" fill="url(#${p}h3)"/>
+  <path d="M30 500C90 420 160 350 220 300" stroke="#E8D5A8" stroke-width="16" fill="none" opacity=".45" stroke-linecap="round"/>
+  ${sheep(92,250,.9,false)}
+  ${sheep(165,268,1.05,true)}
+  ${sheep(250,276,.8,false)}
+  ${sheep(58,300,1.25,false)}
+  <path d="M310 410L304 300q-2-22 14-24q16-1 16 16" fill="none" stroke="#6B4C34" stroke-width="5" stroke-linecap="round"/>
+  <g fill="#FFF3D6"><circle cx="40" cy="360" r="3"/><circle cx="120" cy="340" r="2.5"/><circle cx="210" cy="352" r="3"/><circle cx="280" cy="330" r="2.5"/><circle cx="330" cy="356" r="3"/></g>
+  <g fill="#F4A9A0"><circle cx="70" cy="380" r="3"/><circle cx="170" cy="372" r="2.5"/><circle cx="255" cy="368" r="3"/></g>
+  <path d="M0 400C120 380 240 410 360 386V500H0Z" fill="#457F4B"/>
+  </svg>`;
+}
+function artEagle(p){
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C4777"/><stop offset=".45" stop-color="#6D8CC0"/><stop offset=".72" stop-color="#C9B8C8"/><stop offset="1" stop-color="#F3C9A2"/></linearGradient>
+    <radialGradient id="${p}sun" cx=".5" cy=".5"><stop offset="0" stop-color="#FFF4DA"/><stop offset=".3" stop-color="#FFE3B8" stop-opacity=".8"/><stop offset="1" stop-color="#FFD8A8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${p}m3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3E5288"/><stop offset="1" stop-color="#26355F"/></linearGradient>
+  </defs>
+  <rect width="360" height="500" fill="url(#${p}sky)"/>
+  <circle cx="180" cy="300" r="170" fill="url(#${p}sun)"/>
+  <g fill="#FFF3DA" opacity=".12"><path d="M180 300L60 0H110Z"/><path d="M180 300L170 0H215Z"/><path d="M180 300L290 0H340Z"/></g>
+  <g fill="#fff"><circle cx="40" cy="40" r="1.2" opacity=".7"/><circle cx="300" cy="30" r="1.4" opacity=".6"/><circle cx="330" cy="80" r="1" opacity=".5"/><circle cx="70" cy="90" r="1" opacity=".5"/></g>
+  <path d="M0 270L50 210L84 236L140 168L190 226L232 190L290 240L330 206L360 226V500H0Z" fill="#A9B4D6"/>
+  <path d="M140 168L124 188L136 186L146 196L156 184L164 190Z" fill="#F4F1EE"/>
+  <path d="M232 190L220 204L232 202L240 210L248 202Z" fill="#F4F1EE"/>
+  <path d="M0 312L70 236L110 270L170 212L230 280L290 230L360 290V500H0Z" fill="#7287BC"/>
+  <path d="M70 236L54 256L68 252L76 262L88 250Z" fill="#E9ECF4"/>
+  <path d="M170 212L152 234L166 230L174 242L184 230L192 236Z" fill="#E9ECF4"/>
+  <path d="M290 230L274 248L288 246L296 254L308 244Z" fill="#E9ECF4"/>
+  <g fill="#FFFFFF" opacity=".55"><ellipse cx="90" cy="300" rx="70" ry="12"/><ellipse cx="270" cy="314" rx="80" ry="12"/><ellipse cx="190" cy="326" rx="60" ry="9"/></g>
+  <path d="M0 360L60 300L120 346L200 280L270 340L320 306L360 330V500H0Z" fill="url(#${p}m3)"/>
+  <path d="M0 430C90 400 220 420 360 396V500H0Z" fill="#1C2748"/>
+  <g transform="translate(176 118) rotate(-6)" fill="#1E2840">
+    <path d="M0 -4C-18 -14 -40 -30 -66 -36L-96 -44L-86 -35L-106 -35L-91 -27L-110 -23L-90 -17L-104 -10L-80 -8C-56 -4 -28 4 -9 10L-7 22L0 32L7 22L9 10C28 4 56 -4 80 -8L104 -10L90 -17L110 -23L91 -27L106 -35L86 -35L96 -44L66 -36C40 -30 18 -14 0 -4Z"/>
+    <path d="M-8 22L-12 40L0 34L12 40L8 22Z"/>
+    <circle cx="0" cy="-8" r="6.5" fill="#F5F0E6"/>
+    <path d="M-2 -4L0 4L3 -3Z" fill="#E2A33F"/>
+  </g>
+  <g fill="none" stroke="#1E2840" stroke-width="1.6" stroke-linecap="round" opacity=".55"><path d="M70 196q5-5 10 0q5-5 10 0"/><path d="M276 150q4-4 8 0q4-4 8 0"/></g>
+  </svg>`;
+}
+function artLantern(p){
+  const stars=[[30,40],[70,22],[118,58],[160,30],[210,64],[300,40],[330,90],[50,110],[250,24],[280,120],[20,170],[340,170],[96,150],[190,110]];
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1A3A"/><stop offset=".6" stop-color="#22386A"/><stop offset="1" stop-color="#3B5487"/></linearGradient>
+    <radialGradient id="${p}glow"><stop offset="0" stop-color="#FFE1A0" stop-opacity=".95"/><stop offset=".25" stop-color="#FFC966" stop-opacity=".55"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${p}path" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C6A46A" stop-opacity=".35"/><stop offset=".55" stop-color="#E9C987"/><stop offset="1" stop-color="#B98F52"/></linearGradient>
+    <mask id="${p}moon"><rect width="360" height="500" fill="#fff"/><circle cx="84" cy="70" r="22" fill="#000"/></mask>
+  </defs>
+  <rect width="360" height="500" fill="url(#${p}sky)"/>
+  ${stars.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i%3?1.1:1.8}" fill="#FFF6DD" opacity="${i%2?.6:.95}"/>`).join('')}
+  <circle cx="72" cy="78" r="24" fill="#FBEFCF" mask="url(#${p}moon)"/>
+  <path d="M0 236C70 206 130 220 190 228S300 206 360 216V500H0Z" fill="#1C2D58"/>
+  <path d="M0 270C90 246 170 266 240 256S330 244 360 250V500H0Z" fill="#16244A"/>
+  <g fill="#0F1A38"><path d="M30 262l12-40l12 40z"/><path d="M48 264l9-30l9 30z"/><path d="M318 252l11-38l11 38z"/></g>
+  <path d="M176 246C168 270 150 290 160 320C172 360 120 400 70 500H300C240 420 230 370 214 330C200 296 196 270 190 246Z" fill="url(#${p}path)"/>
+  <circle cx="232" cy="236" r="130" fill="url(#${p}glow)"/>
+  <ellipse cx="222" cy="352" rx="70" ry="16" fill="#FFD98C" opacity=".35"/>
+  <rect x="229" y="246" width="6" height="110" rx="2" fill="#2A2F45"/>
+  <path d="M232 246h22v8" stroke="#2A2F45" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g transform="translate(254 256)">
+    <path d="M-6 0h12l2 5h-16z" fill="#2A2F45"/>
+    <rect x="-11" y="5" width="22" height="30" rx="4" fill="#FFE7A8" stroke="#2A2F45" stroke-width="3"/>
+    <path d="M0 13c4 5 4 10 0 14c-4-4-4-9 0-14z" fill="#FF9E3D"/>
+    <path d="M-13 35h26l-3 5h-20z" fill="#2A2F45"/>
+  </g>
+  <g fill="#FFE39A"><circle cx="150" cy="300" r="2"/><circle cx="300" cy="280" r="1.8"/><circle cx="110" cy="250" r="1.5"/><circle cx="320" cy="330" r="2.2" opacity=".7"/></g>
+  <path d="M0 400C70 390 120 420 150 500H0Z" fill="#0E1833"/>
+  <path d="M360 390C300 392 260 430 250 500H360Z" fill="#0E1833"/>
+  </svg>`;
+}
+
+/* ---------- shared pieces ---------- */
+const status = `<div class="island"></div><div class="status"><span>9:41</span><span class="ic">${I.sig}${I.wifi}${I.bat}</span></div>`;
+const appbar = (right=I.book)=>`<div class="appbar"><div class="brand"><div class="logo">LOGO</div><div class="nm">○○교회<small>오늘의 말씀</small></div></div><div class="iconbtn">${right}</div></div>`;
+function wave(progress, color){
+  let h=[];for(let i=0;i<34;i++){const v=Math.abs(Math.sin(i*1.7)*0.6+Math.sin(i*0.45)*0.4);h.push(6+Math.round(v*20));}
+  return `<div class="wave">${h.map((x,i)=>`<i style="height:${x}px;${i/34<progress?`background:${color}`:''}"></i>`).join('')}</div>`;
+}
+function verseScreen(o){
+  return `<div class="screen">${status}${o.toast||''}${appbar()}
+    <div class="dateline"><div class="d">${o.date}<b>오늘의 한 구절</b></div><div class="streak">${o.streak}</div></div>
+    <div class="vcard">${o.art}<div class="shade"></div>
+      <div class="chips"><span class="chip">DAY ${o.day}</span><span class="chip">${o.theme}</span></div>
+      <div class="vtext"><q>${o.verse}</q><div class="ref">${o.ref}</div></div>
+    </div>
+    <div class="player">
+      <div class="play" style="background:${o.color};color:${o.color}">${o.playing?I.pauseW:I.playW}</div>
+      <div class="pinfo"><div class="t">${o.playing?'읽어주는 중…':'말씀 듣기'}<span>${o.time}</span></div>${wave(o.progress,o.color)}</div>
+      <div class="speed">1.0x</div>
+    </div>
+    <div class="actions"><div class="a"><span>${o.liked?I.heartF:I.heart}${o.liked?'아멘 24':'아멘'}</span><span>${I.save}보관</span><span>${I.share}공유</span></div></div>
+    <div style="text-align:center;margin-top:12px" class="hint">내일 키링을 다시 대면 새로운 말씀이 열려요</div>
+    <div class="home"></div></div>`;
+}
+
+/* ---------- screens ---------- */
+const keyringHero = `<svg viewBox="0 0 360 390" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tphone" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A3E48"/><stop offset="1" stop-color="#22252C"/></linearGradient>
+    <linearGradient id="tacr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#EFE8DA"/></linearGradient>
+    <clipPath id="tclip"><rect x="-56" y="-72" width="112" height="144" rx="24"/></clipPath>
+    <radialGradient id="tbg"><stop offset="0" stop-color="#F3E6CB"/><stop offset="1" stop-color="#F3E6CB" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="180" cy="200" r="175" fill="url(#tbg)"/>
+  <g transform="translate(118 200) rotate(-8)">
+    <rect x="-70" y="-140" width="140" height="280" rx="28" fill="url(#tphone)"/>
+    <rect x="-52" y="-122" width="44" height="58" rx="14" fill="#1A1C22"/>
+    <circle cx="-30" cy="-104" r="11" fill="#2E323B" stroke="#444955" stroke-width="2"/>
+    <circle cx="-30" cy="-80" r="8" fill="#2E323B"/>
+    <g fill="none" stroke="#E7C784" stroke-width="3" stroke-linecap="round">
+      <path d="M8 -10a22 22 0 0 1 0 30" opacity=".95"/><path d="M20 -24a40 40 0 0 1 0 58" opacity=".7"/><path d="M32 -38a58 58 0 0 1 0 86" opacity=".45"/>
+    </g>
+  </g>
+  <g transform="translate(250 214) rotate(10)">
+    <circle cx="0" cy="-104" r="20" fill="none" stroke="#B9BDC6" stroke-width="5"/>
+    <circle cx="0" cy="-104" r="20" fill="none" stroke="#fff" stroke-width="1.5" opacity=".6"/>
+    <rect x="-5" y="-88" width="10" height="18" rx="4" fill="#A9ADB6"/>
+    <rect x="-56" y="-72" width="112" height="144" rx="24" fill="url(#tacr)" stroke="#E2D8C4" stroke-width="2"/>
+    <g clip-path="url(#tclip)">
+      <g transform="translate(-56 -72) scale(.311 .288)">${artShepherd('kr').replace('class="bg"','')}</g>
+    </g>
+    <rect x="-56" y="-72" width="112" height="144" rx="24" fill="none" stroke="#fff" stroke-width="5" opacity=".9"/>
+    <circle cx="0" cy="-60" r="5" fill="#fff" stroke="#D9CFBB"/>
+    <g transform="translate(0 38)"><circle r="17" fill="#fff" opacity=".92"/><path d="M0 -10v20M-7 -3h14" stroke="#8A6A3E" stroke-width="3" stroke-linecap="round"/></g>
+  </g>
+</svg>`;
+
+const s1 = `<div class="screen">${status}${appbar(I.menu)}
+  <div class="tagwrap">
+    <div class="hero">${keyringHero}</div>
+    <h2>키링을 휴대폰 뒷면에<br>가볍게 대주세요</h2>
+    <p>하루 한 구절, 오늘의 말씀 카드가 열립니다.<br>매일 다른 말씀과 그림을 만나보세요.</p>
+    <div class="today"><div class="lk" style="color:#8A6A3E">${I.lock}</div><div><b>11월 22일 말씀이 기다리고 있어요</b><small>아직 열지 않음 · 3일 연속 받는 중</small></div></div>
+    <div class="qr">NFC가 안 되나요? <u>QR 코드로 열기</u></div>
+  </div><div class="home"></div></div>`;
+
+const toast = `<div class="toast"><div class="ti">${I.nfc}</div><div><b>키링 인식 완료</b><small>오늘의 말씀이 열렸어요 · 방금</small></div></div>`;
+
+const s2 = verseScreen({day:1,date:'11월 22일 토요일',streak:'연속 1일',art:artShepherd('a'),theme:'평안 · 공급',
+  verse:'여호와는 나의 목자시니<br>내게 부족함이 없으리로다',ref:'시편 23:1',color:'#4E8B5C',time:'0:00 / 0:08',progress:0,toast});
+const s3 = verseScreen({day:2,date:'11월 23일 주일',streak:'연속 2일',art:artEagle('b'),theme:'새 힘 · 소망',playing:true,liked:true,
+  verse:'오직 여호와를 앙망하는 자는 <span class="now">새&nbsp;힘을&nbsp;얻으리니</span> <span class="dim">독수리가 날개치며 올라감 같을 것이요</span>',ref:'이사야 40:31',color:'#3E5C9A',time:'0:05 / 0:14',progress:.42});
+const s4 = verseScreen({day:3,date:'11월 24일 월요일',streak:'연속 3일',art:artLantern('c'),theme:'인도 · 빛',
+  verse:'주의 말씀은 내 발에 등이요<br>내 길에 빛이니이다',ref:'시편 119:105',color:'#C9973F',time:'0:00 / 0:07',progress:0});
+
+const tabs = `<div class="tabbar">
+  <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6"/></svg>오늘</div>
+  <div class="on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>보관함</div>
+  <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 8a6 6 0 0 1 0 8M11 5.5a10 10 0 0 1 0 13M15 3a14 14 0 0 1 0 18"/></svg>내 키링</div>
+  <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>내 정보</div>
+</div>`;
+const mini=(art,ref,day)=>`<div class="mini">${art}<div class="sh"></div><div class="r"><small>DAY ${day}</small>${ref}</div></div>`;
+const s5 = `<div class="screen">${status}${appbar()}
+  <div class="ctitle"><h3>말씀 보관함</h3><p>키링으로 받은 말씀 카드가 모여요</p></div>
+  <div class="week"><div class="top"><b>3일 연속 말씀을 받았어요</b><span>11월 넷째 주</span></div>
+    <div class="days">${['토','일','월','화','수','목','금'].map((d,i)=>`<div>${d}<i class="${i<2?'on':i==2?'on':''}${i==3?' td':''}">${i<3?'✓':22+i}</i></div>`).join('')}</div></div>
+  <div class="grid">
+    ${mini(artShepherd('m1'),'시편 23:1',1)}
+    ${mini(artEagle('m2'),'이사야 40:31',2)}
+    ${mini(artLantern('m3'),'시편 119:105',3)}
+    <div class="mini lock next"><div><div style="display:flex;justify-content:center;margin-bottom:6px">${I.lock}</div>내일 열려요<br><span style="font-weight:400">11월 25일</span></div></div>
+    <div class="mini lock"><div style="display:flex;justify-content:center">${I.lock}</div></div>
+    <div class="mini lock"><div style="display:flex;justify-content:center">${I.lock}</div></div>
+  </div>
+  ${tabs}<div class="home"></div></div>`;
+
+const steps = [
+  ['01','키링 태그 화면','앱을 열거나 키링을 대면 시작',s1],
+  ['02','오늘의 말씀 · DAY 1','시편 23:1 → 초장과 양 일러스트',s2],
+  ['03','다음 날 · 읽어주기 재생 중','이사야 40:31 → 날아오르는 독수리',s3],
+  ['04','그 다음 날 · DAY 3','시편 119:105 → 밤길을 비추는 등불',s4],
+  ['05','말씀 보관함','받은 카드 모아보기 · 연속 기록',s5],
+];
+document.getElementById('row').innerHTML = steps.map(([n,t,s,html],i)=>`<div class="col"><div class="step"><b>${n}</b><div>${t}<small>${s}</small></div></div><div class="phone" id="p${i+1}">${html}</div></div>`).join('');
+</script>
+</body>
+</html>
