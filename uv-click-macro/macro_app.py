@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.22"
+VERSION = "v.23"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.23", "11/22", "시작 확인 창은 총 수량이 납품수량의 95% 이상일 때만 표시"),
     ("v.22", "11/22", "납품수량 입력 (채우면 총 소재 수량 빨간색), F9 시작 전 확인 창"),
     ("v.21", "11/21", "위쪽 버튼 줄 오른쪽 끝을 목록 오른쪽 끝에 맞춤"),
     ("v.20", "11/21", "위쪽 새 작업·저장·다른 이름·삭제 버튼 넓게, 버튼 이름 '녹화 F4'"),
@@ -306,7 +307,7 @@ class StepDialog(tk.Toplevel):
 
 
 class StartConfirm(tk.Toplevel):
-    """F9 / 시작 누르면 먼저 뜨는 확인 창"""
+    """납품수량 95% 이상일 때 F9 / 시작 누르면 먼저 뜨는 확인 창"""
 
     def __init__(self, app):
         super().__init__(app.root)
@@ -322,7 +323,8 @@ class StartConfirm(tk.Toplevel):
         frm.pack(fill="both", expand=True)
         tk.Label(frm, text="⚠ 자동 클릭을 시작할까요?", bg="#ffffff", fg="#b00020",
                  font=("맑은 고딕", 13, "bold")).pack(anchor="w")
-        tk.Label(frm, text="인쇄 프로그램 창과 소재 위치를 확인하세요.", bg="#ffffff", fg="#555",
+        pct = int(app._total() * 100 / app.target) if app.target else 0
+        tk.Label(frm, text=f"납품수량의 {pct}% 를 채웠습니다. 남은 수량을 확인하세요.", bg="#ffffff", fg="#555",
                  font=("맑은 고딕", 9)).pack(anchor="w", pady=(2, 8))
         info = tk.Frame(frm, bg="#f4f6fa", padx=12, pady=8)
         info.pack(fill="x")
@@ -731,6 +733,10 @@ class MacroApp:
             self.settings["target"] = t
             save_settings(self.settings)
         self._update_count_display()
+
+    def _near_target(self):
+        """납품수량의 95% 이상 채웠는지 (시작 확인 창을 띄울 때)"""
+        return self.target > 0 and self._total() >= self.target * 0.95
 
     def _target_reached(self):
         return self.target > 0 and self._total() >= self.target
@@ -1183,13 +1189,15 @@ class MacroApp:
             messagebox.showinfo(APP_TITLE, "등록된 단계가 없습니다.")
             return
         self._collect_options()
-        dlg = StartConfirm(self)
-        self._confirm_dlg = dlg
-        self.root.wait_window(dlg)
-        self._confirm_dlg = None
-        if not dlg.result:
-            self.status.set("시작을 취소했습니다.")
-            return
+        if self._near_target():
+            # 납품수량의 95% 이상 채웠을 때만 확인 창
+            dlg = StartConfirm(self)
+            self._confirm_dlg = dlg
+            self.root.wait_window(dlg)
+            self._confirm_dlg = None
+            if not dlg.result:
+                self.status.set("시작을 취소했습니다.")
+                return
         self._begin_run()
 
     def _begin_run(self):
