@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.23"
+VERSION = "v.24"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.24", "11/22", "시작 확인 창의 남은 수량 숫자를 빨갛고 크게 표시"),
     ("v.23", "11/22", "시작 확인 창은 총 수량이 납품수량의 95% 이상일 때만 표시"),
     ("v.22", "11/22", "납품수량 입력 (채우면 총 소재 수량 빨간색), F9 시작 전 확인 창"),
     ("v.21", "11/21", "위쪽 버튼 줄 오른쪽 끝을 목록 오른쪽 끝에 맞춤"),
@@ -334,13 +335,24 @@ class StartConfirm(tk.Toplevel):
                  else "END 없음 — 세지 않음"),
                 ("총 소재 수량", f"{app._total():,}장")]
         if app.target:
-            left = max(0, app.target - app._total())
-            rows.append(("납품수량", f"{app.target:,}장  (남은 수량 {left:,}장)"))
+            rows.append(("납품수량", f"{app.target:,}장"))
         for r, (k, v) in enumerate(rows):
             tk.Label(info, text=k, bg="#f4f6fa", fg="#666", font=("맑은 고딕", 9)).grid(
                 row=r, column=0, sticky="w", padx=(0, 14), pady=1)
             tk.Label(info, text=v, bg="#f4f6fa", fg="#111", font=("맑은 고딕", 9, "bold")).grid(
                 row=r, column=1, sticky="w", pady=1)
+        if app.target:
+            # 남은 수량: 숫자만 빨갛고 크게
+            left = max(0, app.target - app._total())
+            r = len(rows)
+            tk.Label(info, text="남은 수량", bg="#f4f6fa", fg="#666", font=("맑은 고딕", 9)).grid(
+                row=r, column=0, sticky="w", padx=(0, 14), pady=(4, 0))
+            cell = tk.Frame(info, bg="#f4f6fa")
+            cell.grid(row=r, column=1, sticky="w", pady=(4, 0))
+            tk.Label(cell, text=f"{left:,}", bg="#f4f6fa", fg="#d0002a",
+                     font=("맑은 고딕", 22, "bold")).pack(side="left")
+            tk.Label(cell, text="장", bg="#f4f6fa", fg="#111",
+                     font=("맑은 고딕", 9)).pack(side="left", anchor="s", pady=(0, 6), padx=(3, 0))
         if app._target_reached():
             tk.Label(frm, text="※ 이미 납품수량을 채웠습니다!", bg="#ffffff", fg="#d0002a",
                      font=("맑은 고딕", 10, "bold")).pack(anchor="w", pady=(8, 0))
