@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.26"
+VERSION = "v.27"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.27", "11/23", "F9 실행 중에는 이 창을 맨 아래로 (끝나면 다시 앞으로)"),
     ("v.26", "11/23", "1회 시간 (F9 → END → 다음 F9) 표시, 납품수량 기준 예상 완료 시각"),
     ("v.25", "11/22", "작업 중 '한 번에 소재' 수량을 바꿔도 이미 센 총 소재 수량은 그대로"),
     ("v.24", "11/22", "시작 확인 창의 남은 수량 숫자를 빨갛고 크게 표시"),
@@ -898,7 +899,30 @@ class MacroApp:
         self._update_count_display()
 
     def _apply_topmost(self):
+        if getattr(self, "running", False):
+            return              # 실행 중에는 맨 아래에 두고, 끝나면 다시 적용
         self.root.attributes("-topmost", bool(self.topmost.get()))
+
+    def _send_to_back(self):
+        """실행 시작: 이 창을 열린 창들 중 맨 아래로 (자기 자신을 클릭하지 않게)"""
+        try:
+            self.root.attributes("-topmost", False)
+            self.root.lower()
+            if sys.platform == "win32":
+                hwnd = int(self.root.wm_frame(), 16)
+                HWND_BOTTOM, SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE = 1, 0x1, 0x2, 0x10
+                ctypes.windll.user32.SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0,
+                                                  SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE)
+        except Exception:
+            pass
+
+    def _bring_back(self):
+        """실행 끝: 다시 앞으로 (항상 위 설정 복원)"""
+        try:
+            self.root.attributes("-topmost", bool(self.topmost.get()))
+            self.root.lift()
+        except Exception:
+            pass
 
     # ------------------------------------------------------------ 목록 표시
     def _refresh_tree(self, select=None):
@@ -1312,6 +1336,7 @@ class MacroApp:
     def _begin_run(self):
         self._mark_cycle()
         self.running = True
+        self._send_to_back()
         self.stop_event.clear()
         self.pause_event.clear()
         self.start_btn.state(["disabled"])
@@ -1428,6 +1453,7 @@ class MacroApp:
         self.pause_btn.state(["disabled"])
         self.pause_btn.config(text="일시정지 (F11)")
         self._last_done = f"{reason} {time.strftime('%H:%M:%S')}"
+        self._bring_back()
         self._tick_elapsed()
 
     def _tick_elapsed(self, first=True):
