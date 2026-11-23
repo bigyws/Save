@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.25"
+VERSION = "v.26"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.26", "11/23", "1회 시간 (F9 → END → 다음 F9) 표시, 납품수량 기준 예상 완료 시각"),
     ("v.25", "11/22", "작업 중 '한 번에 소재' 수량을 바꿔도 이미 센 총 소재 수량은 그대로"),
     ("v.24", "11/22", "시작 확인 창의 남은 수량 숫자를 빨갛고 크게 표시"),
     ("v.23", "11/22", "시작 확인 창은 총 수량이 납품수량의 95% 이상일 때만 표시"),
@@ -184,6 +185,18 @@ def save_settings(data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
+
+
+def fmt_dur(sec):
+    """초 → '2분 35초' 같은 글자"""
+    sec = int(round(sec))
+    h, rem = divmod(sec, 3600)
+    mnt, sc = divmod(rem, 60)
+    if h:
+        return f"{h}시간 {mnt}분"
+    if mnt:
+        return f"{mnt}분 {sc:02d}초"
+    return f"{sc}초"
 
 
 def is_end(step):
@@ -414,7 +427,12 @@ class MacroApp:
         p = self.settings.get("pieces")
         self.pieces = int(p) if p is not None else None
         self.target = int(self.settings.get("target", 0))  # 납품수량 (0 = 안 정함)
-        self._confirm_dlg = None   # 총 장수 직접 조정분 (＋/－장)
+        self._confirm_dlg = None
+        # 1회 시간 측정: F9(시작) → END → 다음 F9 까지
+        self.cycle_start = None        # 마지막으로 시작한 시각
+        self.cycle_pieces = 0          # 그때의 총 소재 수량
+        self.cycles = []               # [(걸린 초, 그동안 늘어난 장수), ...]
+        self._last_done = ""           # 마지막 실행 결과 글자   # 총 장수 직접 조정분 (＋/－장)
         self.count_paused = False
 
         self.macro = {"name": "", "repeat": 1, "start_wait": 2.0, "per_plate": 1, "steps": []}
@@ -702,6 +720,12 @@ class MacroApp:
         self.count_state = ttk.Label(row1, text="", foreground="#1b7a3d", font=("맑은 고딕", 8))
         self.count_state.pack(side="right")
 
+        # 1회 시간 + 예상 완료 시각
+        self.eta_var = tk.StringVar(value="")
+        self.eta_label = ttk.Label(box, textvariable=self.eta_var, foreground="#1a4fa0",
+                                   font=("맑은 고딕", 8, "bold"))
+        self.eta_label.pack(fill="x", pady=(0, 2))
+
         # 버튼
         row2 = ttk.Frame(box)
         row2.pack(fill="x")
@@ -769,6 +793,44 @@ class MacroApp:
         self.total_title.config(text="총 소재 수량" + (f"\n납품 {self.target:,}장" if self.target else ""))
         self._apply_count_colors()
         self._update_count_rule()
+        self._update_eta()
+
+    def _cycle_avg(self):
+        """최근 5회 평균: (1회 초, 1회 장수). 장수가 안 늘어난 회차는 장수 평균에서 뺌"""
+        recent = self.cycles[-5:]
+        if not recent:
+            return None, None
+        avg_sec = sum(c[0] for c in recent) / len(recent)
+        valid = [c for c in recent if c[1] > 0]
+        rate = (sum(c[1] for c in valid) / sum(c[0] for c in valid)) if valid else None
+        avg_pcs = (sum(c[1] for c in valid) / len(valid)) if valid else None
+        return avg_sec, (rate, avg_pcs)
+
+    def _update_eta(self):
+        if not hasattr(self, "eta_var"):
+            return
+        avg_sec, rp = self._cycle_avg()
+        if avg_sec is None and self.cycle_start is not None:
+            el = time.time() - self.cycle_start
+            self.eta_var.set(f"⏱ 이번 회 {fmt_dur(el)} 진행 중 — 다음 F9 를 누르면 1회 시간이 기록됩니다")
+            return
+        if avg_sec is None:
+            self.eta_var.set("⏱ 1회 시간: F9 를 두 번 누르면 계산 (F9 → END → 다음 F9)")
+            return
+        text = f"⏱ 1회 {fmt_dur(self.cycles[-1][0])}"
+        if len(self.cycles) > 1:
+            text += f" (평균 {fmt_dur(avg_sec)})"
+        if self.target:
+            left = self.target - self._total()
+            rate, avg_pcs = rp
+            if left <= 0:
+                text += "  ·  납품수량 완료"
+            elif rate:
+                secs = left / rate
+                times = -(-left // avg_pcs) if avg_pcs else 0
+                end = time.strftime("%H:%M", time.localtime(time.time() + secs))
+                text += f"  ·  남은 {left:,}장 ≈ {int(times)}회  ·  예상 완료 {end} (약 {fmt_dur(secs)} 후)"
+        self.eta_var.set(text)
 
     def _apply_count_colors(self):
         base = "#ffc94d" if self.count_paused else "#4dff9a"
@@ -1234,7 +1296,21 @@ class MacroApp:
                 return
         self._begin_run()
 
+    def _mark_cycle(self):
+        """F9 로 시작할 때마다: 지난 시작부터 지금까지를 1회 시간으로 기록"""
+        now = time.time()
+        total = self._total()
+        if self.cycle_start is not None:
+            sec = now - self.cycle_start
+            if 0 < sec <= 3600:            # 1시간 넘게 쉬었으면 (점심 등) 기록 안 함
+                self.cycles.append((sec, total - self.cycle_pieces))
+                self.cycles = self.cycles[-20:]
+        self.cycle_start = now
+        self.cycle_pieces = total
+        self._update_eta()
+
     def _begin_run(self):
+        self._mark_cycle()
         self.running = True
         self.stop_event.clear()
         self.pause_event.clear()
@@ -1351,7 +1427,27 @@ class MacroApp:
         self.start_btn.state(["!disabled"])
         self.pause_btn.state(["disabled"])
         self.pause_btn.config(text="일시정지 (F11)")
-        self.status.set(f"{reason}  ({time.strftime('%H:%M:%S')})")
+        self._last_done = f"{reason} {time.strftime('%H:%M:%S')}"
+        self._tick_elapsed()
+
+    def _tick_elapsed(self, first=True):
+        """끝난 뒤 맨 아래: F9 누른 뒤 지난 시간 (다음 F9 까지가 1회)"""
+        if getattr(self, "_tick_job", None):
+            try:
+                self.root.after_cancel(self._tick_job)
+            except tk.TclError:
+                pass
+            self._tick_job = None
+        if self.running or self.recording or self.cycle_start is None:
+            return
+        # 다른 안내 글(저장됨 등)이 떠 있으면 덮어쓰지 않음
+        if first or self.status.get() == getattr(self, "_tick_text", None):
+            el = time.time() - self.cycle_start
+            self._tick_text = (f"{self._last_done}  ·  F9 누른 뒤 {fmt_dur(el)} 지남 "
+                               "(다음 F9 까지가 1회)")
+            self.status.set(self._tick_text)
+        self._update_eta()
+        self._tick_job = self.root.after(1000, lambda: self._tick_elapsed(False))
 
     def _on_close(self):
         if self.running:
