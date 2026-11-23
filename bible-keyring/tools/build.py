@@ -5,7 +5,8 @@ refs.py의 구절을 뽑아 data/verses-365.json, data/verses-365.csv 를 만듭
 """
 import json, sys, re, csv, os
 from opencc import OpenCC
-from refs import MONTHS
+from refs import MONTHS, SPECIALS
+import datetime
 
 CODES = "Gen Exo Lev Num Deu Jos Jdg Rut 1Sa 2Sa 1Ki 2Ki 1Ch 2Ch Ezr Neh Est Job Psa Pro Ecc Sng Isa Jer Lam Eze Dan Hos Joe Amo Oba Jon Mic Nah Hab Zep Hag Zec Mal Mat Mar Luk Joh Act Rom 1Co 2Co Gal Eph Phi Col 1Th 2Th 1Ti 2Ti Tit Phm Heb Jas 1Pe 2Pe 1Jo 2Jo 3Jo Jud Rev".split()
 KO = "창세기 출애굽기 레위기 민수기 신명기 여호수아 사사기 룻기 사무엘상 사무엘하 열왕기상 열왕기하 역대상 역대하 에스라 느헤미야 에스더 욥기 시편 잠언 전도서 아가 이사야 예레미야 예레미야애가 에스겔 다니엘 호세아 요엘 아모스 오바댜 요나 미가 나훔 하박국 스바냐 학개 스가랴 말라기 마태복음 마가복음 누가복음 요한복음 사도행전 로마서 고린도전서 고린도후서 갈라디아서 에베소서 빌립보서 골로새서 데살로니가전서 데살로니가후서 디모데전서 디모데후서 디도서 빌레몬서 히브리서 야고보서 베드로전서 베드로후서 요한일서 요한이서 요한삼서 유다서 요한계시록".split()
@@ -93,13 +94,23 @@ def parse(ref):
         vs = [int(v)]
     return CODES.index(code), int(c), vs, v
 
+def entry(ref):
+    bi, c, vs, vlabel = parse(ref)
+    return {"ref_code": ref,
+            "ref_ko": f"{KO[bi]} {c}:{vlabel}", "ref_en": f"{EN[bi]} {c}:{vlabel}",
+            "ref_ja": f"{JA[bi]} {c}:{vlabel}", "ref_zh": f"{ZH[bi]} {c}:{vlabel}",
+            "ko": get("KorRV", bi, c, vs), "en": get("KJV", bi, c, vs),
+            "ja": get("JapKougo", bi, c, vs), "zh": get("ChiUn", bi, c, vs)}
+
 rows = []; day = 0
 for month, theme, s in MONTHS:
     for ref in [x.strip() for x in s.split(";")]:
         day += 1
+        dt = datetime.date(2027, 1, 1) + datetime.timedelta(days=day - 1)  # 평년 기준 날짜
         bi, c, vs, vlabel = parse(ref)
         rows.append({
-            "day": day, "month": month, "theme": theme, "ref_code": ref,
+            "day": day, "date": dt.strftime("%m-%d"), "date_ko": f"{dt.month}월 {dt.day}일",
+            "month": month, "theme": theme, "ref_code": ref,
             "ref_ko": f"{KO[bi]} {c}:{vlabel}", "ref_en": f"{EN[bi]} {c}:{vlabel}",
             "ref_ja": f"{JA[bi]} {c}:{vlabel}", "ref_zh": f"{ZH[bi]} {c}:{vlabel}",
             "ko": get("KorRV", bi, c, vs), "en": get("KJV", bi, c, vs),
@@ -110,11 +121,35 @@ from motifs import motif_for
 for r in rows:
     r["motif"] = motif_for(r)
 
+specials = []
+for key, name, when, ref in SPECIALS:
+    e = {"key": key, "name": name, "when": when, "month": None, "theme": name}
+    e.update(entry(ref)); e["motif"] = motif_for({**e, "month": "1월"})
+    specials.append(e)
+SPECIAL_MOTIF = {"welcome": "두 손 모아 축복", "easter": "부활의 아침", "harvest": "보리 추수 들판", "thanksgiving": "추수하는 들판", "leap": "모래시계와 계절"}
+for e in specials: e["motif"] = SPECIAL_MOTIF[e["key"]]
+
+def easter(y):
+    """그레고리력 부활절 (서방 교회) 날짜 계산"""
+    a = y % 19; b, c = divmod(y, 100); d, e = divmod(b, 4); f = (b + 8) // 25; g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30; i, k = divmod(c, 4); l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451; month = (h + l - 7 * m + 114) // 31; day = (h + l - 7 * m + 114) % 31 + 1
+    return datetime.date(y, month, day)
+
+def nth_sunday(y, month, n):
+    d = datetime.date(y, month, 1); d += datetime.timedelta(days=(6 - d.weekday()) % 7)
+    return d + datetime.timedelta(weeks=n - 1)
+
+calendar = {"note": "교회 절기 날짜. 교회에서 다른 날로 지키면 이 값만 바꾸면 됩니다.",
+            "years": {str(y): {"easter": easter(y).isoformat(), "harvest": nth_sunday(y, 7, 1).isoformat(),
+                                "thanksgiving": nth_sunday(y, 11, 3).isoformat()} for y in range(2026, 2036)}}
+
 out = os.path.join(os.path.dirname(__file__), "..", "data")
 meta = {"title": "말씀 키링 365", "versions": {"ko": "개역한글 (1961)", "en": "King James Version", "ja": "口語訳 (1955)", "zh": "和合本 (简体)"},
         "source": "scrollmapper/bible_databases (KorRV, KJV, JapKougo, ChiUn)", "count": len(rows)}
-json.dump({"meta": meta, "verses": rows}, open(os.path.join(out, "verses-365.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-cols = ["day", "month", "theme", "ref_ko", "ko", "motif", "ref_en", "en", "ref_ja", "ja", "ref_zh", "zh"]
+json.dump(calendar, open(os.path.join(out, "calendar.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+json.dump({"meta": meta, "verses": rows, "specials": specials}, open(os.path.join(out, "verses-365.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+cols = ["day", "date_ko", "month", "theme", "ref_ko", "ko", "motif", "ref_en", "en", "ref_ja", "ja", "ref_zh", "zh"]
 with open(os.path.join(out, "verses-365.csv"), "w", encoding="utf-8-sig", newline="") as f:
     w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore"); w.writeheader(); w.writerows(rows)
 print("wrote", len(rows))
