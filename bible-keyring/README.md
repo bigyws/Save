@@ -4,7 +4,10 @@
 
 - `mockups/board.png`: 전체 화면 흐름을 한 장에 모은 보드
 - `mockups/screen-1~5.png`: 화면별 이미지 (태그 → Day 1 → Day 2 읽어주기 → Day 3 → 보관함)
-- `mockups/board.html`: 이미지의 원본 (브라우저로 열 수 있음, 일러스트는 코드로 그린 SVG)
+- `mockups/lang-board.png`, `mockups/lang-screen-1~5.png`: 다국어 초안 v0.2 (English · 日本語 · 中文 · 두 언어 함께 보기 · 언어/목소리 설정)
+- `mockups/board.html`, `mockups/lang.html`: 이미지 원본 (브라우저로 열 수 있음, 일러스트는 코드로 그린 SVG)
 
 교회 마크·로고는 상단 점선 원(LOGO)과 "○○교회" 자리에 들어갈 예정입니다.
 구절 본문은 개역개정 성경입니다. 실제 배포 전에는 대한성서공회의 사용 허락을 받아야 합니다.
+
+번역본 초안: 한국어 개역개정, English KJV, 日本語 口語訳, 中文 和合本(简体).
