@@ -196,7 +196,7 @@
   let DATA = null, CAL = null, current = null, view = "today", previewDate = null;
   let speaking = false, timer = null, startAt = 0, estMs = 0, boundary = -1;
 
-  function load(){ try { return Object.assign({lang:"ko", dual:false, rate:1, first:null, opened:{}}, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){ return {lang:"ko", dual:false, rate:1, first:null, opened:{}}; } }
+  function load(){ try { return Object.assign({lang:"ko", dual:false, rate:1, first:null, opened:{}, calib:{}}, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){ return {lang:"ko", dual:false, rate:1, first:null, opened:{}}; } }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
   const pad = (n) => String(n).padStart(2,"0");
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -380,46 +380,63 @@
       }); });
   }
   function clearMarks(){ document.querySelectorAll(".vtext .c").forEach((sp) => sp.classList.remove("now", "todo")); }
+  // 한 문장을 끊지 않고 한 번에 읽습니다. 색은 휴대폰이 알려주는 읽는 위치를 따르고,
+  // 알려주지 않으면 글자 길이로 계산합니다. 끝까지 들으면 이 휴대폰 목소리의 빠르기를 기억해 다음부터 더 정확해집니다.
+  const W = (ch) => /[가-힣]/.test(ch) ? 1 : /[぀-ヿ]/.test(ch) ? .9 : /[一-鿿]/.test(ch) ? 1.15
+    : /[,.;:!?、。，；：！？]/.test(ch) ? 2.2 : /\s/.test(ch) ? .5 : /[A-Za-z]/.test(ch) ? .32 : .5;
+  const MS_PER_W = {ko:200, en:190, ja:150, zh:220};
   let run = 0;
   function startSpeak(){
     if (!synth) { toast("이 기기에서는 읽어주기를 쓸 수 없어요"); return; }
     run++; synth.cancel();
     const my = run;
-    const parts = speakParts();
-    const seq = []; parts.forEach((p, pi) => p.chunks.forEach((t, ci) => seq.push({p, pi, ci, t})));
-    const total = seq.reduce((a, x) => a + x.t.length, 0) || 1;
-    const perChar = {ko:150, en:65, ja:150, zh:230};
-    let msPerChar = seq.reduce((a, x) => a + x.t.length * perChar[x.p.lang], 0) / total / store.rate;
-    let doneChars = 0, chunkStart = 0, curLen = 0, spentMs = 0, spentChars = 0;
+    const parts = speakParts().map((p) => {
+      let w = 0, off = 0;
+      const chunks = p.chunks.map((t) => { const cw = [...t].reduce((a, ch) => a + W(ch), 0); const c = {t, w0: w, w1: w + cw, c0: off, c1: off + t.length}; w += cw; off += t.length; return c; });
+      return Object.assign(p, {cks: chunks, totalW: w, text: current[p.lang]});
+    });
+    const allW = parts.reduce((a, p) => a + p.totalW, 0) || 1;
+    store.calib = store.calib || {};
+    const msw = (lang) => (store.calib[lang] || MS_PER_W[lang]) / store.rate;
+    let pi = 0, partStart = 0, useBoundary = false, lastMark = "";
     speaking = true; startAt = Date.now();
     $("playBtn").innerHTML = playIcon(true); $("playTitle").textContent = "읽어주는 중…";
     setMark(parts, 0, -1);
+    const mark = (p, ci) => { const k = p + ":" + ci; if (k !== lastMark) { lastMark = k; setMark(parts, p, ci); } };
     setTimeout(() => {
       if (my !== run) return;
-      seq.forEach((x, k) => {
-        const u = new SpeechSynthesisUtterance(x.t.trim());
-        u.lang = VOICE[x.p.lang]; u.rate = store.rate; const v = pickVoice(x.p.lang); if (v) u.voice = v;
-        u.onstart = () => { if (my !== run) return; chunkStart = Date.now(); curLen = x.t.length; setMark(parts, x.pi, x.ci); };
+      parts.forEach((p, idx) => {
+        const u = new SpeechSynthesisUtterance(p.text);
+        u.lang = VOICE[p.lang]; u.rate = store.rate; const v = pickVoice(p.lang); if (v) u.voice = v;
+        u.onstart = () => { if (my !== run) return; pi = idx; partStart = Date.now(); useBoundary = false; mark(idx, 0); };
+        u.onboundary = (e) => {
+          if (my !== run || e.charIndex == null || e.charIndex <= 0) return;
+          useBoundary = true;
+          const ci = p.cks.findIndex((c) => e.charIndex < c.c1);
+          mark(idx, ci < 0 ? p.cks.length - 1 : ci);
+        };
         u.onend = () => {
           if (my !== run) return;
-          const el = Date.now() - chunkStart;
-          if (chunkStart && el > 80) { spentMs += el; spentChars += x.t.length; msPerChar = spentMs / spentChars; }
-          doneChars += x.t.length; curLen = 0;
-          if (k === seq.length - 1) endSpeak(true);
+          const d = Date.now() - partStart;
+          if (partStart && d > 600) { const m = d * store.rate / p.totalW; const old = store.calib[p.lang]; store.calib[p.lang] = old ? old * .4 + m * .6 : m; save(); }
+          if (idx === parts.length - 1) endSpeak(true);
         };
-        u.onerror = () => { if (my !== run) return; endSpeak(false); };
+        u.onerror = (e) => { if (my !== run) return; if (e && (e.error === "interrupted" || e.error === "canceled")) return; endSpeak(false); };
         synth.speak(u);
       });
     }, 80);
     clearInterval(timer);
     timer = setInterval(() => {
-      if (my !== run) return;
+      if (my !== run || !partStart) return;
+      const p = parts[pi];
+      const pos = Math.min(p.totalW, (Date.now() - partStart) / msw(p.lang));
+      if (!useBoundary) { const ci = p.cks.findIndex((c) => pos < c.w1); mark(pi, ci < 0 ? p.cks.length - 1 : ci); }
+      const doneW = parts.slice(0, pi).reduce((a, q) => a + q.totalW, 0) + pos;
+      const remain = parts.slice(pi).reduce((a, q, k) => a + (k === 0 ? q.totalW - pos : q.totalW) * msw(q.lang), 0);
       const el = Date.now() - startAt;
-      const partial = curLen ? Math.min(curLen, (Date.now() - chunkStart) / msPerChar) : 0;
-      const p = Math.min(.99, (doneChars + partial) / total);
-      $("playBar").style.width = (p * 100).toFixed(1) + "%";
-      $("playTime").textContent = `${fmt(el)} / ${fmt(el + (total - doneChars - partial) * msPerChar)}`;
-    }, 200);
+      $("playBar").style.width = (Math.min(.99, doneW / allW) * 100).toFixed(1) + "%";
+      $("playTime").textContent = `${fmt(el)} / ${fmt(el + remain)}`;
+    }, 100);
   }
   function endSpeak(done){
     run++; clearInterval(timer); speaking = false;
