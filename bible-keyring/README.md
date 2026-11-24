@@ -1,4 +1,18 @@
-# 말씀 키링: 오늘의 한 구절 (디자인 초안 v0.1)
+# 말씀 키링: 오늘의 한 구절
+
+## 시험용 앱 (`index.html`)
+
+휴대폰 브라우저로 여는 앱입니다. 오늘 카드 열기, 읽어주기(휴대폰 목소리), 4개 언어, 두 언어 함께 보기,
+보관함·연속 기록, 날짜 바꿔 미리보기(부활절·성탄절·윤년)가 됩니다. 기록은 그 휴대폰에만 저장됩니다.
+
+- `app.html`: 앱 본문 (클로드 아티팩트로 올리는 파일)
+- `index.html`: `tools/make_index.sh`로 app.html에 문서 머리말을 붙여 만든 파일 (GitHub Pages용)
+- `lib/art.js`: 카드 배경 그림, `lib/daily.js`: 오늘 카드 고르기
+
+GitHub Pages를 켜면 `https://bigyws.github.io/Save/bible-keyring/` 에서 열립니다.
+NFC 키링에는 `https://bigyws.github.io/Save/bible-keyring/?tag=1` 을 저장하면 대는 순간 오늘 카드가 열립니다.
+
+## 디자인 초안
 
 키링 안에 NFC 칩을 넣고 휴대폰을 대면 성경 구절이 하루에 한 구절씩 카드로 열리는 앱의 화면 초안입니다.
 
