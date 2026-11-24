@@ -6,15 +6,14 @@
   :root{
     --bg:#F7F4EE; --surface:#FFFFFF; --sunk:#EEE9E1; --line:#E4DDD1;
     --ink:#23262E; --sub:#6B6F78; --accent:#8A6A3E; --gold:#E7C784; --dark:#23262E; --on-dark:#FFFFFF;
-    --logo-bg:transparent; --logo-pad:0;
     --sans:'Noto Sans KR',system-ui,sans-serif; --serif:'Gowun Batang','Noto Serif KR',serif;
   }
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
     --bg:#16181D; --surface:#1F2229; --sunk:#2A2E37; --line:#323743;
-    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; --logo-bg:#FFFFFF; --logo-pad:4px 8px; color-scheme:dark } }
+    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; color-scheme:dark } }
   :root[data-theme="dark"]{
     --bg:#16181D; --surface:#1F2229; --sunk:#2A2E37; --line:#323743;
-    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; --logo-bg:#FFFFFF; --logo-pad:4px 8px; color-scheme:dark }
+    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; color-scheme:dark }
   [hidden]{display:none!important}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -38,7 +37,11 @@
   #view-box,#view-settings{overflow-y:auto;-webkit-overflow-scrolling:touch}
   .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .brand{display:flex;align-items:center;gap:10px}
-  .logo-img{display:block;height:46px;width:auto;max-width:62vw;padding:var(--logo-pad);border-radius:12px;background:var(--logo-bg)}
+  .logo-img{display:block;height:46px;width:auto;max-width:62vw}
+  .logo-img.on-dark{display:none}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .logo-img.on-light{display:none} :root:not([data-theme="light"]) .logo-img.on-dark{display:block} }
+  :root[data-theme="dark"] .logo-img.on-light{display:none}
+  :root[data-theme="dark"] .logo-img.on-dark{display:block}
   .brand b{display:block;font-size:15px}
   .brand small{font-size:11.5px;color:var(--sub)}
   .chip{font-size:12px;font-weight:700;padding:6px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
@@ -127,7 +130,7 @@
 <div class="shell">
 <div class="app">
   <div class="top">
-    <div class="brand"><img class="logo-img" src="img/logo.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"></div>
+    <div class="brand"><img class="logo-img on-light" src="img/logo.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"><img class="logo-img on-dark" src="img/logo-dark.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"></div>
     <span class="chip" id="streakChip">시작 전</span>
   </div>
   <div class="preview" id="previewBar" hidden><span id="previewText"></span><button id="previewReset" type="button">오늘로</button></div>
