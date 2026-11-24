@@ -13,3 +13,10 @@
 ## 콕태그 NFC 추억 키링 (`nfc-keyring/`)
 
 강아지·고양이 NFC 키링 디자인, 판매 페이지(웹 스타일), 추억 앨범, 앱 스타일 버전입니다. 자세한 내용은 [`nfc-keyring/README.md`](nfc-keyring/README.md)를 보세요.
+
+## 말씀 키링 (`bible-keyring/`, `bible-keyring-original/`)
+
+- `bible-keyring-original/`: **원본. 고치지 않습니다.** 새 교회용·새 버전은 이 폴더를 복사해서 만듭니다.
+  주소: https://bigyws.github.io/Save/bible-keyring-original/
+- `bible-keyring/`: 작업용 복사본 (앞으로의 수정은 여기서)
+  주소: https://bigyws.github.io/Save/bible-keyring/
