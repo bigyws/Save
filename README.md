@@ -20,3 +20,5 @@
   주소: https://bigyws.github.io/Save/bible-keyring-original/
 - `bible-keyring/`: 작업용 복사본 (앞으로의 수정은 여기서)
   주소: https://bigyws.github.io/Save/bible-keyring/
+- `churches/pungsunghan/`: 풍성한교회용 (원본 복사 + 로고·이름)
+  주소: https://bigyws.github.io/Save/churches/pungsunghan/

@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F7F4EE">
+<link rel="icon" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="풍성한교회 말씀">
+</head>
+<body>
+<title>풍성한교회 말씀</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+JP:wght@600&family=Noto+Serif+SC:wght@600&family=Lora:ital,wght@0,600;1,500&display=swap">
+<style>
+  /* 한 손으로 쓰는 세로 화면: 위 교회 이름, 가운데 카드, 아래 재생기와 탭 */
+  :root{
+    --bg:#F7F4EE; --surface:#FFFFFF; --sunk:#EEE9E1; --line:#E4DDD1;
+    --ink:#23262E; --sub:#6B6F78; --accent:#8A6A3E; --gold:#E7C784; --dark:#23262E; --on-dark:#FFFFFF;
+    --logo-bg:transparent; --logo-pad:0;
+    --sans:'Noto Sans KR',system-ui,sans-serif; --serif:'Gowun Batang','Noto Serif KR',serif;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+    --bg:#16181D; --surface:#1F2229; --sunk:#2A2E37; --line:#323743;
+    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; --logo-bg:#FFFFFF; --logo-pad:4px 8px; color-scheme:dark } }
+  :root[data-theme="dark"]{
+    --bg:#16181D; --surface:#1F2229; --sunk:#2A2E37; --line:#323743;
+    --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; --logo-bg:#FFFFFF; --logo-pad:4px 8px; color-scheme:dark }
+  [hidden]{display:none!important}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+  *{box-sizing:border-box}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .shell{height:100%;display:flex;flex-direction:column}
+  .app{flex:1;min-height:0;width:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 10px}
+  .app > section{flex:1;min-height:0}
+  #view-today{display:flex;flex-direction:column;overflow-y:auto}
+  @media (max-height:700px){
+    .brand small,.pinfo small{display:none}
+    .logo-img{height:36px}
+    .dateline{margin:6px 4px 6px}
+    .dateline .d b{font-size:17px}
+    .card{min-height:150px}
+    .player{margin-top:8px;padding:8px 10px}
+    .play{width:44px;height:44px}
+    .actions{padding-top:6px}
+  }
+  #view-box,#view-settings{overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo-img{display:block;height:46px;width:auto;max-width:62vw;padding:var(--logo-pad);border-radius:12px;background:var(--logo-bg)}
+  .brand b{display:block;font-size:15px}
+  .brand small{font-size:11.5px;color:var(--sub)}
+  .chip{font-size:12px;font-weight:700;padding:6px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+  .preview{margin-top:10px;font-size:12.5px;background:var(--sunk);border-radius:12px;padding:8px 12px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .preview button{border:0;background:none;font-weight:700;color:var(--accent);padding:0}
+  .dateline{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:10px 4px 8px;flex:none}
+  .dateline .d{font-size:13px;color:var(--sub)}
+  .dateline .d b{display:block;font-size:19px;color:var(--ink);font-weight:800;letter-spacing:-.4px;margin-top:2px;text-wrap:balance}
+  .seg{display:flex;gap:2px;background:var(--sunk);border-radius:14px;padding:4px;margin-bottom:10px;flex:none}
+  .seg button{flex:1;border:0;background:none;padding:7px 0;border-radius:10px;font-size:13px;font-weight:600;color:var(--sub)}
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:800;box-shadow:0 2px 6px -2px rgba(0,0,0,.18)}
+  .card{position:relative;flex:1;min-height:180px;max-width:100%;border-radius:28px;overflow:hidden;box-shadow:0 18px 36px -18px rgba(30,25,15,.5);background:#334}
+  .card svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .card .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 34%,rgba(12,16,26,.6) 62%,rgba(12,16,26,.9) 100%)}
+  .card .chips{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:8px}
+  .card .chips span{font-size:11.5px;font-weight:700;color:#fff;padding:6px 11px;border-radius:99px;background:rgba(20,24,34,.3);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.35)}
+  .vtext{position:absolute;left:22px;right:22px;bottom:22px;color:#fff;max-height:calc(100% - 70px);overflow-y:auto;scrollbar-width:none}
+  .vtext::-webkit-scrollbar{display:none}
+  .vtext q{display:block;quotes:none;font-family:var(--serif);font-weight:700;font-size:clamp(18px,5.2vw,23px);line-height:1.6;word-break:keep-all;text-shadow:0 1px 10px rgba(0,0,0,.3)}
+  .vtext q.en{font-family:'Lora',Georgia,serif;font-weight:600;line-height:1.45}
+  .vtext q.ja{font-family:'Noto Serif JP',serif;font-weight:600;letter-spacing:.3px;word-break:normal;line-break:strict}
+  .vtext q.zh{font-family:'Noto Serif SC',serif;font-weight:600;letter-spacing:.8px;word-break:normal}
+  .vtext q.en{word-break:normal;overflow-wrap:break-word}
+  .vtext q.long{font-size:clamp(15px,4.3vw,19px)}
+  .vtext .c{transition:opacity .2s}
+  .vtext .c.todo{opacity:.5}
+  .vtext .c.now{background:linear-gradient(transparent 58%,rgba(231,199,132,.62) 58%)}
+  .vtext .sub{font-family:'Lora',Georgia,serif;font-style:italic;font-size:14px;line-height:1.5;opacity:.88;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.28)}
+  .vtext .sub.cjk{font-family:var(--sans);font-style:normal}
+  .vtext .ref{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;font-weight:500;letter-spacing:.4px}
+  .vtext .ref:before{content:"";width:22px;height:1.5px;background:#fff;opacity:.8}
+  .locked{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#fff;background:rgba(14,18,28,.55);backdrop-filter:blur(10px);padding:24px}
+  .locked b{display:block;font-size:20px;margin:12px 0 6px}
+  .locked p{margin:0 0 18px;font-size:14px;opacity:.85;line-height:1.6}
+  .btn{border:0;border-radius:14px;padding:13px 18px;font-weight:800;font-size:15px;background:var(--gold);color:#23262E}
+  .btn.ghost{background:var(--sunk);color:var(--ink)}
+  .player{flex:none;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:14px}
+  .play{width:50px;height:50px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;background:var(--c,#4E8B5C)}
+  .play:disabled{opacity:.4;cursor:default}
+  .pinfo{flex:1;min-width:0}
+  .pinfo .t{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700}
+  .pinfo .t span{font-weight:500;color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
+  .bar{height:6px;border-radius:3px;background:var(--sunk);margin-top:9px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--c,#4E8B5C);border-radius:3px;transition:width .2s linear}
+  .pinfo small{display:block;font-size:11.5px;color:var(--sub);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .speed{border:0;font-size:12px;font-weight:800;padding:7px 9px;border-radius:10px;background:var(--sunk);flex:none;font-variant-numeric:tabular-nums}
+  .actions{flex:none;display:flex;gap:18px;padding:10px 6px 0;font-size:13px;color:var(--sub)}
+  .actions button{border:0;background:none;padding:0;display:flex;gap:6px;align-items:center;color:inherit}
+  .hint{text-align:center;font-size:12px;color:var(--sub);margin-top:14px}
+  h2{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:18px 4px 4px}
+  .lead{font-size:13px;color:var(--sub);margin:0 4px 14px}
+  .week{background:var(--dark);color:var(--on-dark);border-radius:22px;padding:16px 18px}
+  .week b{font-size:16px}
+  .week small{display:block;font-size:12px;opacity:.7;margin-top:4px}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+  .mini{position:relative;aspect-ratio:3/4.2;border-radius:16px;overflow:hidden;border:0;padding:0;background:var(--sunk);text-align:left}
+  .mini svg.bg{position:absolute;inset:0;width:100%;height:100%}
+  .mini .sh{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,14,24,.78))}
+  .mini span{position:absolute;left:9px;right:6px;bottom:8px;color:#fff;font-size:11px;font-weight:700;line-height:1.3}
+  .mini span small{display:block;font-weight:400;opacity:.85;font-size:10px}
+  .mini.lock{display:grid;place-items:center;color:var(--sub);font-size:11.5px;font-weight:700;border:1.5px dashed var(--line);text-align:center}
+  .empty{font-size:13px;color:var(--sub);text-align:center;padding:30px 10px}
+  .group{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px}
+  .group > b{display:block;font-size:12px;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
+  .group p{font-size:12.5px;color:var(--sub);line-height:1.6;margin:8px 0 0}
+  .row2{display:flex;gap:8px;flex-wrap:wrap}
+  .row2 > *{flex:1 1 120px}
+  .opt{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px;font-weight:700;font-size:13.5px}
+  .opt[aria-pressed="true"]{background:var(--dark);color:var(--on-dark);border-color:var(--dark)}
+  input[type=date]{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px;font:inherit}
+  code{font-size:12px;background:var(--sunk);padding:2px 6px;border-radius:6px;word-break:break-all}
+  .tabbar{flex:none;background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .tabbar div{display:flex;max-width:460px;width:100%}
+  .tabbar button{flex:1;border:0;background:none;padding:8px 0 10px;font-size:11px;color:var(--sub);display:grid;justify-items:center;gap:3px}
+  .tabbar button[aria-current="page"]{color:var(--ink);font-weight:800}
+  .overlay{position:fixed;inset:0;background:rgba(10,12,18,.6);display:grid;place-items:center;z-index:30;padding:20px max(16px,env(safe-area-inset-left,0px))}
+  .welcome{width:min(400px,100%);background:var(--surface);border-radius:26px;overflow:hidden}
+  .welcome .card{flex:none;border-radius:0;box-shadow:none;aspect-ratio:3/3.4}
+  .welcome .body{padding:16px 18px 18px;text-align:center}
+  .welcome .body b{font-size:17px}
+  .welcome .body p{font-size:13px;color:var(--sub);margin:6px 0 14px}
+  .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);background:#23262E;color:#fff;border-radius:14px;padding:11px 16px;font-size:13.5px;z-index:40;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
+  @media (prefers-reduced-motion:reduce){ .bar i,.vtext .c{transition:none} }
+</style>
+
+<div class="shell">
+<div class="app">
+  <div class="top">
+    <div class="brand"><img class="logo-img" src="img/logo.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"></div>
+    <span class="chip" id="streakChip">시작 전</span>
+  </div>
+  <div class="preview" id="previewBar" hidden><span id="previewText"></span><button id="previewReset" type="button">오늘로</button></div>
+
+  <section id="view-today">
+    <div class="dateline"><div class="d"><span id="dateText"></span><b id="titleText">오늘의 한 구절</b></div><span class="chip" id="countChip" hidden></span></div>
+    <div class="seg" id="langSeg" role="group" aria-label="말씀 언어"></div>
+    <div class="card" id="card"></div>
+    <div class="player">
+      <button class="play" id="playBtn" type="button" aria-label="읽어주기"></button>
+      <div class="pinfo"><div class="t"><span id="playTitle" style="color:inherit;font-weight:700;font-size:13px">말씀 듣기</span><span id="playTime"></span></div><div class="bar"><i id="playBar"></i></div><small id="voiceText"></small></div>
+      <button class="speed" id="speedBtn" type="button" aria-label="읽는 속도">1.0x</button>
+    </div>
+    <div class="actions">
+      <button type="button" id="copyBtn">말씀 복사</button>
+      <button type="button" id="dualBtn">두 언어 함께 보기</button>
+    </div>
+  </section>
+
+  <section id="view-box" hidden>
+    <h2>말씀 보관함</h2><p class="lead">키링으로 받은 말씀 카드가 모여요</p>
+    <div class="week"><b id="boxStreak"></b><small id="boxSince"></small></div>
+    <div class="grid" id="boxGrid"></div>
+  </section>
+
+  <section id="view-settings" hidden>
+    <h2>설정</h2><p class="lead">시험용 앱이에요. 이 휴대폰에만 저장됩니다.</p>
+    <div class="group"><b>키링 대기</b>
+      <button class="btn" id="tapBtn" type="button" style="width:100%">키링을 댄 것처럼 오늘 카드 열기</button>
+      <p>NFC 키링에는 이 페이지 주소 끝에 <code>#tag</code>를 붙여 저장하면, 대는 순간 카드가 열립니다.</p>
+    </div>
+    <div class="group"><b>보기 방식</b><div class="row2"><button class="opt" type="button" data-dual="0">한 언어</button><button class="opt" type="button" data-dual="1">두 언어 함께</button></div></div>
+    <div class="group"><b>날짜 바꿔 미리보기</b>
+      <label for="dateInput" class="lead" style="display:block;margin:0 0 8px">다른 날 나올 카드를 미리 봅니다 (보관함에는 넣지 않아요)</label>
+      <input type="date" id="dateInput" min="2026-01-01" max="2035-12-31">
+      <div class="row2" style="margin-top:8px">
+        <button class="opt" type="button" data-jump="2027-03-28">27년 부활절</button>
+        <button class="opt" type="button" data-jump="2026-12-25">성탄절</button>
+        <button class="opt" type="button" data-jump="2028-02-29">윤년 2/29</button>
+      </div>
+    </div>
+    <div class="group"><b>처음부터 다시</b>
+      <button class="btn ghost" id="resetBtn" type="button" style="width:100%">보관함과 기록 지우기</button>
+      <p id="resetNote">지우면 다음에 키링을 댈 때 첫 만남 카드가 다시 나와요.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="tabbar" aria-label="메뉴"><div>
+  <button type="button" data-view="today" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6"/></svg>오늘</button>
+  <button type="button" data-view="box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>보관함</button>
+  <button type="button" data-view="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 8a6 6 0 0 1 0 8M11 5.5a10 10 0 0 1 0 13M15 3a14 14 0 0 1 0 18"/></svg>키링·설정</button>
+</div></nav>
+</div>
+
+<script src="lib/daily.js"></script>
+<script src="lib/art.js"></script>
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const LANGS = [["ko","한국어"],["en","English"],["ja","日本語"],["zh","中文"]];
+  const VOICE = {ko:"ko-KR", en:"en-US", ja:"ja-JP", zh:"zh-CN"};
+  const VOICE_NAME = {ko:"한국어", en:"English", ja:"日本語", zh:"中文"};
+  const VERSION = {ko:"개역한글", en:"KJV", ja:"口語訳", zh:"和合本"};
+  const refWithVersion = (c, l) => `${c["ref_" + l]} · ${VERSION[l]}`;
+  const COLORS = {"1월":"#8E7BB8","2월":"#C36A76","3월":"#5A8F6A","4월":"#6FA054","5월":"#4E8B5C","6월":"#4F7FA8","7월":"#3F8C77","8월":"#3E5C9A","9월":"#9A7A4E","10월":"#B8693A","11월":"#B88A2E","12월":"#C9973F"};
+  const KEY = "malsseum-keyring-v1";
+  let store = load();
+  let DATA = null, CAL = null, current = null, view = "today", previewDate = null;
+  let speaking = false, timer = null, startAt = 0, estMs = 0, boundary = -1;
+
+  function load(){ try { return Object.assign({lang:"ko", dual:false, rate:1, first:null, opened:{}, calib:{}}, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){ return {lang:"ko", dual:false, rate:1, first:null, opened:{}}; } }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
+  const pad = (n) => String(n).padStart(2,"0");
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fromIso = (s) => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const todayIso = () => iso(new Date());
+  const WD = ["일","월","화","수","목","금","토"];
+  const koDate = (d) => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일`;
+  const cardKey = (c) => c.key ? "s:" + c.key : "d:" + c.day;
+  const findCard = (k) => k.startsWith("s:") ? DATA.specials.find(s => "s:" + s.key === k) : DATA.verses[Number(k.slice(2)) - 1];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const color = (c) => COLORS[c.month] || ({welcome:"#8E7BB8",easter:"#6FA054",harvest:"#3F8C77",thanksgiving:"#B88A2E",leap:"#5A8F6A"}[c.key]) || "#4E8B5C";
+
+  function toast(msg){ const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
+  function streak(){
+    let n = 0; const d = new Date();
+    if (!store.opened[iso(d)]) d.setDate(d.getDate() - 1);
+    while (store.opened[iso(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function openToday(fromTag){
+    const today = todayIso();
+    const first = !store.first;
+    const pick = MalsseumDaily.pickCard(new Date(), DATA, CAL, {firstTapEver: first});
+    if (first) store.first = today;
+    const already = !!store.opened[today];
+    store.opened[today] = cardKey(pick.card);
+    save();
+    previewDate = null; show("today");
+    if (pick.welcome) showWelcome(pick.welcome);
+    else toast(already ? "오늘 말씀은 이미 열려 있어요" : (fromTag ? "키링 인식 완료 · 오늘의 말씀이 열렸어요" : "오늘의 말씀이 열렸어요"));
+  }
+
+  function showWelcome(w){
+    const o = document.createElement("div"); o.className = "overlay";
+    o.innerHTML = `<div class="welcome" role="dialog" aria-label="첫 만남 카드"><div class="card">${MalsseumArt.artFor(w,"wl")}<div class="shade"></div>
+      <div class="chips"><span>첫 만남</span><span>축복</span></div>
+      <div class="vtext"><q class="long">${esc(w[store.lang] || w.ko)}</q><div class="ref">${esc(refWithVersion(w, store.lang))}</div></div></div>
+      <div class="body"><img src="img/emblem.png" alt="" width="60" height="60" style="display:block;margin:0 auto 6px"><b>풍성한교회 말씀 키링에 오신 것을 환영합니다</b><p>오늘부터 하루 한 구절, 말씀 카드가 열려요.</p><button class="btn" type="button" style="width:100%">오늘의 말씀 보기</button></div></div>`;
+    o.querySelector("button").onclick = () => o.remove();
+    document.body.appendChild(o); o.querySelector("button").focus();
+  }
+
+  function render(){
+    stopSpeak();
+    const viewing = previewDate || new Date();
+    const vIso = iso(viewing);
+    const isPreview = !!previewDate && vIso !== todayIso();
+    const pick = MalsseumDaily.pickCard(viewing, DATA, CAL, {});
+    current = pick.card;
+    const opened = isPreview || !!store.opened[vIso];
+    const L = store.lang, c = current;
+    $("previewBar").hidden = !isPreview;
+    $("previewText").textContent = `미리보기: ${koDate(viewing)}`;
+    $("dateText").textContent = koDate(viewing);
+    $("titleText").textContent = c.key ? `${c.name} 특별 카드` : "오늘의 한 구절";
+    const days = Object.keys(store.opened).length;
+    const idx = Object.keys(store.opened).sort().indexOf(vIso);
+    $("countChip").hidden = !(opened && !isPreview && idx >= 0);
+    $("countChip").textContent = `나의 ${idx + 1}번째 말씀`;
+    const s = streak();
+    $("streakChip").textContent = store.first ? `연속 ${s}일` : "시작 전";
+    $("langSeg").innerHTML = LANGS.map(([k,n]) => `<button type="button" data-lang="${k}" aria-pressed="${k===L}">${n}</button>`).join("");
+    const text = c[L], ref = refWithVersion(c, L);
+    const subLang = L === "ko" ? "en" : "ko";
+    const long = text.length > (L === "en" ? 150 : 70);
+    const chipLeft = c.key ? c.name : `DAY ${c.day} · ${c.date_ko}`;
+    $("card").style.setProperty("--c", color(c));
+    $("card").innerHTML = `${MalsseumArt.artFor(c, "cd")}<div class="shade"></div>
+      ${opened ? `<div class="chips"><span>${esc(chipLeft)}</span><span>${esc(c.key ? "특별 카드" : c.theme)}</span></div>
+      <div class="vtext"><q class="${L}${long || store.dual ? " long" : ""}" id="verseQ">${chunkHtml(text, L)}</q>
+      ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${chunkHtml(c[subLang], subLang)}</div>` : ""}
+      <div class="ref">${esc(ref)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${esc(refWithVersion(c, subLang))}</div>` : ""}</div>` : ""}
+      ${opened ? "" : `<div class="locked"><div><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
+        <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요<br>키링이 없으면 아래 버튼으로 열 수 있어요</p><button class="btn" type="button" id="unlockBtn">키링 없이 열어 보기</button></div></div>`}`;
+    const ub = $("unlockBtn"); if (ub) ub.onclick = () => openToday(false);
+    document.querySelector(".player").style.setProperty("--c", color(c));
+    $("playBtn").disabled = !opened;
+    $("playBtn").innerHTML = playIcon(false);
+    $("playTitle").textContent = "말씀 듣기";
+    $("playBar").style.width = "0";
+    $("speedBtn").textContent = store.rate.toFixed(1) + "x";
+    $("voiceText").textContent = voiceLabel();
+    $("playTime").textContent = "";
+    $("dualBtn").textContent = store.dual ? "한 언어로 보기" : "두 언어 함께 보기";
+    document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String(store.dual) === (b.dataset.dual === "1" ? "true" : "false")));
+    fitText();
+  }
+
+  // 긴 구절은 카드 안에 다 들어가도록 글자 크기를 줄입니다.
+  function fitText(){
+    const card = $("card"), vt = card && card.querySelector(".vtext"); if (!vt) return;
+    const q = vt.querySelector("q"), sub = vt.querySelector(".sub");
+    q.style.fontSize = ""; if (sub) sub.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(q).fontSize), guard = 0;
+    const room = card.clientHeight - 74;
+    while (vt.scrollHeight > room && size > 11 && guard++ < 40) {
+      size -= 1; q.style.fontSize = size + "px";
+      if (sub) sub.style.fontSize = Math.max(10, Math.round(size * .68)) + "px";
+    }
+  }
+
+  function renderBox(){
+    const keys = Object.keys(store.opened).sort().reverse();
+    $("boxStreak").textContent = store.first ? `${streak()}일 연속 말씀을 받았어요` : "아직 받은 말씀이 없어요";
+    $("boxSince").textContent = store.first ? `${store.first.replace(/-/g,".")}부터 모두 ${keys.length}장` : "키링을 대면 첫 카드가 여기에 담겨요";
+    if (!keys.length){ $("boxGrid").innerHTML = `<div class="empty" style="grid-column:1/-1">아직 비어 있어요. 오늘 카드를 열어 보세요.</div>`; return; }
+    const tomorrow = `<div class="mini lock">내일 열려요</div>`;
+    $("boxGrid").innerHTML = tomorrow + keys.map((d, i) => { const c = findCard(store.opened[d]); if (!c) return "";
+      return `<button type="button" class="mini" data-date="${d}">${MalsseumArt.artFor(c, "m" + i)}<div class="sh"></div><span><small>${d.slice(5).replace("-","/")}</small>${esc(c.ref_ko)}</span></button>`; }).join("");
+  }
+
+  function show(v){
+    view = v;
+    ["today","box","settings"].forEach(k => $("view-" + k).hidden = k !== v);
+    document.querySelectorAll(".tabbar button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    if (v === "today") render(); else stopSpeak();
+    if (v === "box") renderBox();
+    if (v === "settings") { $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- 읽어주기 ---------- */
+  const synth = window.speechSynthesis;
+  function pickVoice(lang){
+    if (!synth) return null;
+    const vs = synth.getVoices(); const code = VOICE[lang];
+    return vs.find(v => v.lang === code) || vs.find(v => v.lang && v.lang.replace("_","-").startsWith(code.slice(0,2))) || null;
+  }
+  function voiceLabel(){
+    if (!synth) return "이 기기에서는 읽어주기를 쓸 수 없어요";
+    const v = pickVoice(store.lang);
+    return v ? `${VOICE_NAME[store.lang]} 목소리 · ${v.name}` : `${VOICE_NAME[store.lang]} 목소리가 이 기기에 없을 수 있어요`;
+  }
+  function playIcon(on){ return on
+    ? `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.3" fill="#fff"/><rect x="14" y="5" width="4" height="14" rx="1.3" fill="#fff"/></svg>`
+    : `<svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#fff"/></svg>`; }
+  function fmt(ms){ const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s/60)}:${pad(s%60)}`; }
+  // 문장을 짧은 구절로 나눕니다. 한 구절씩 읽고, 휴대폰이 그 구절을 읽기 시작할 때 색을 바꿉니다.
+  function splitChunks(text, lang){
+    let out = [];
+    if (lang === "ko") {
+      const words = text.match(/\S+\s*/g) || [text];
+      for (let i = 0; i < words.length; i += 3) out.push(words.slice(i, i + 3).join(""));
+    } else {
+      const brk = lang === "en" ? ",;:.!?" : "、。，；：！？", close = "”’」』)";
+      let cur = "";
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], next = text[i + 1] || "";
+        cur += ch;
+        const atBreak = brk.includes(ch) || (close.includes(ch) && brk.includes(text[i - 1] || ""));
+        if (atBreak && !close.includes(next)) {
+          while (text[i + 1] === " ") { cur += " "; i++; }
+          out.push(cur); cur = "";
+        }
+      }
+      if (cur) out.push(cur);
+      const maxWords = 7, maxCjk = 18;
+      out = out.flatMap((c) => {
+        if (lang === "en") { const w = c.match(/\S+\s*/g) || [c]; if (w.length <= maxWords + 2) return [c]; const r = []; for (let i = 0; i < w.length; i += maxWords) r.push(w.slice(i, i + maxWords).join("")); return r; }
+        if (c.length <= maxCjk + 6) return [c];
+        const r = []; for (let i = 0; i < c.length; i += maxCjk) r.push(c.slice(i, i + maxCjk)); return r;
+      });
+    }
+    const merged = [];
+    out.forEach((c) => { if (merged.length && c.trim().length <= 2) merged[merged.length - 1] += c; else merged.push(c); });
+    return merged;
+  }
+  function chunkHtml(text, lang){ return splitChunks(text, lang).map((c, i) => `<span class="c" data-i="${i}">${esc(c)}</span>`).join(""); }
+  function speakParts(){
+    const parts = [{lang: store.lang, el: "#verseQ"}];
+    if (store.dual) parts.push({lang: store.lang === "ko" ? "en" : "ko", el: ".vtext .sub"});
+    return parts.map((p) => Object.assign(p, {chunks: splitChunks(current[p.lang], p.lang)}));
+  }
+  function setMark(parts, pi, ci){
+    parts.forEach((p, i) => { const box = document.querySelector(p.el); if (!box) return;
+      box.querySelectorAll(".c").forEach((sp, j) => {
+        sp.classList.remove("now", "todo");
+        if (i > pi || (i === pi && j > ci)) sp.classList.add("todo");
+        else if (i === pi && j === ci) sp.classList.add("now");
+      }); });
+  }
+  function clearMarks(){ document.querySelectorAll(".vtext .c").forEach((sp) => sp.classList.remove("now", "todo")); }
+  // 한 문장을 끊지 않고 한 번에 읽습니다. 색은 휴대폰이 알려주는 읽는 위치를 따르고,
+  // 알려주지 않으면 글자 길이로 계산합니다. 끝까지 들으면 이 휴대폰 목소리의 빠르기를 기억해 다음부터 더 정확해집니다.
+  const W = (ch) => /[가-힣]/.test(ch) ? 1 : /[぀-ヿ]/.test(ch) ? .9 : /[一-鿿]/.test(ch) ? 1.15
+    : /[,.;:!?、。，；：！？]/.test(ch) ? 2.2 : /\s/.test(ch) ? .5 : /[A-Za-z]/.test(ch) ? .32 : .5;
+  const MS_PER_W = {ko:200, en:190, ja:150, zh:220};
+  let run = 0;
+  function startSpeak(){
+    if (!synth) { toast("이 기기에서는 읽어주기를 쓸 수 없어요"); return; }
+    run++; synth.cancel();
+    const my = run;
+    const parts = speakParts().map((p) => {
+      let w = 0, off = 0;
+      const chunks = p.chunks.map((t) => { const cw = [...t].reduce((a, ch) => a + W(ch), 0); const c = {t, w0: w, w1: w + cw, c0: off, c1: off + t.length}; w += cw; off += t.length; return c; });
+      return Object.assign(p, {cks: chunks, totalW: w, text: current[p.lang]});
+    });
+    const allW = parts.reduce((a, p) => a + p.totalW, 0) || 1;
+    store.calib = store.calib || {};
+    const msw = (lang) => (store.calib[lang] || MS_PER_W[lang]) / store.rate;
+    let pi = 0, partStart = 0, useBoundary = false, lastMark = "";
+    speaking = true; startAt = Date.now();
+    $("playBtn").innerHTML = playIcon(true); $("playTitle").textContent = "읽어주는 중…";
+    setMark(parts, 0, -1);
+    const mark = (p, ci) => { const k = p + ":" + ci; if (k !== lastMark) { lastMark = k; setMark(parts, p, ci); } };
+    setTimeout(() => {
+      if (my !== run) return;
+      parts.forEach((p, idx) => {
+        const u = new SpeechSynthesisUtterance(p.text);
+        u.lang = VOICE[p.lang]; u.rate = store.rate; const v = pickVoice(p.lang); if (v) u.voice = v;
+        u.onstart = () => { if (my !== run) return; pi = idx; partStart = Date.now(); useBoundary = false; mark(idx, 0); };
+        u.onboundary = (e) => {
+          if (my !== run || e.charIndex == null || e.charIndex <= 0) return;
+          useBoundary = true;
+          const ci = p.cks.findIndex((c) => e.charIndex < c.c1);
+          mark(idx, ci < 0 ? p.cks.length - 1 : ci);
+        };
+        u.onend = () => {
+          if (my !== run) return;
+          const d = Date.now() - partStart;
+          if (partStart && d > 600) { const m = d * store.rate / p.totalW; const old = store.calib[p.lang]; store.calib[p.lang] = old ? old * .4 + m * .6 : m; save(); }
+          if (idx === parts.length - 1) endSpeak(true);
+        };
+        u.onerror = (e) => { if (my !== run) return; if (e && (e.error === "interrupted" || e.error === "canceled")) return; endSpeak(false); };
+        synth.speak(u);
+      });
+    }, 80);
+    clearInterval(timer);
+    timer = setInterval(() => {
+      if (my !== run || !partStart) return;
+      const p = parts[pi];
+      const pos = Math.min(p.totalW, (Date.now() - partStart) / msw(p.lang));
+      if (!useBoundary) { const ci = p.cks.findIndex((c) => pos < c.w1); mark(pi, ci < 0 ? p.cks.length - 1 : ci); }
+      const doneW = parts.slice(0, pi).reduce((a, q) => a + q.totalW, 0) + pos;
+      const remain = parts.slice(pi).reduce((a, q, k) => a + (k === 0 ? q.totalW - pos : q.totalW) * msw(q.lang), 0);
+      const el = Date.now() - startAt;
+      $("playBar").style.width = (Math.min(.99, doneW / allW) * 100).toFixed(1) + "%";
+      $("playTime").textContent = `${fmt(el)} / ${fmt(el + remain)}`;
+    }, 100);
+  }
+  function endSpeak(done){
+    run++; clearInterval(timer); speaking = false;
+    $("playBtn").innerHTML = playIcon(false); $("playTitle").textContent = done ? "다시 듣기" : "말씀 듣기";
+    $("playBar").style.width = done ? "100%" : "0"; clearMarks();
+  }
+  function stopSpeak(){ run++; if (synth) synth.cancel(); if (speaking) endSpeak(false); }
+
+  /* ---------- 이벤트 ---------- */
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.lang) { store.lang = b.dataset.lang; save(); render(); }
+    else if (b.dataset.view) show(b.dataset.view);
+    else if (b.dataset.dual) { store.dual = b.dataset.dual === "1"; save(); show("settings"); toast(store.dual ? "두 언어 함께 보기로 바꿨어요" : "한 언어로 보기로 바꿨어요"); }
+    else if (b.dataset.jump) { previewDate = fromIso(b.dataset.jump); show("today"); }
+    else if (b.dataset.date) { const d = b.dataset.date; previewDate = d === todayIso() ? null : fromIso(d); show("today"); }
+  });
+  $("playBtn").onclick = () => speaking ? stopSpeak() : startSpeak();
+  $("speedBtn").onclick = () => { const r = [0.8, 1, 1.2]; store.rate = r[(r.indexOf(store.rate) + 1) % r.length] || 1; save(); $("speedBtn").textContent = store.rate.toFixed(1) + "x"; if (speaking) startSpeak(); };
+  $("dualBtn").onclick = () => { store.dual = !store.dual; save(); render(); };
+  $("copyBtn").onclick = () => {
+    const t = `${current[store.lang]}\n— ${refWithVersion(current, store.lang)}`;
+    const fallback = () => { const q = $("verseQ"); const r = document.createRange(); r.selectNodeContents(q); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("말씀을 선택했어요. 길게 눌러 복사하세요"); };
+    try { navigator.clipboard.writeText(t).then(() => toast("말씀을 복사했어요"), fallback); } catch(err){ fallback(); }
+  };
+  $("tapBtn").onclick = () => openToday(true);
+  $("previewReset").onclick = () => { previewDate = null; render(); };
+  $("dateInput").onchange = (e) => { if (e.target.value) { previewDate = fromIso(e.target.value); show("today"); } };
+  let resetArmed = false;
+  $("resetBtn").onclick = () => {
+    if (!resetArmed) { resetArmed = true; $("resetBtn").textContent = "한 번 더 누르면 지워져요"; setTimeout(() => { resetArmed = false; $("resetBtn").textContent = "보관함과 기록 지우기"; }, 4000); return; }
+    store.first = null; store.opened = {}; save(); resetArmed = false; $("resetBtn").textContent = "보관함과 기록 지우기"; toast("기록을 지웠어요"); show("today");
+  };
+  if (synth && "onvoiceschanged" in synth) synth.onvoiceschanged = () => { if (view === "today" && !speaking) $("voiceText").textContent = voiceLabel(); };
+
+  let rz = 0;
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (view === "today") fitText(); }, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitText(); });
+
+  /* ---------- 시작 ---------- */
+  Promise.all([fetch("data/verses-365.json").then(r => r.json()), fetch("data/calendar.json").then(r => r.json())])
+    .then(([d, c]) => {
+      DATA = d; CAL = c;
+      const tagged = location.hash === "#tag" || /[?&]tag\b/.test(location.search);
+      if (tagged) { openToday(true); try { history.replaceState(null, "", location.pathname + location.search.replace(/[?&]tag\b[^&]*/, "")); } catch(e){} }
+      else show("today");
+    })
+    .catch(() => { $("card").innerHTML = `<div class="locked"><div><b>말씀을 불러오지 못했어요</b><p>인터넷 연결을 확인하고 다시 열어 주세요.</p></div></div>`; });
+})();
+</script>
+
+</body>
+</html>
