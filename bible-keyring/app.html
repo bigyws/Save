@@ -16,11 +16,25 @@
     --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; color-scheme:dark }
   [hidden]{display:none!important}
   html,body{height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
   *{box-sizing:border-box}
   button{font:inherit;color:inherit;cursor:pointer}
   button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .app{max-width:460px;margin:0 auto;min-height:100%;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 96px}
+  .shell{height:100%;display:flex;flex-direction:column}
+  .app{flex:1;min-height:0;width:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 10px}
+  .app > section{flex:1;min-height:0}
+  #view-today{display:flex;flex-direction:column;overflow-y:auto}
+  @media (max-height:700px){
+    .brand small,.pinfo small{display:none}
+    .logo{width:30px;height:30px}
+    .dateline{margin:6px 4px 6px}
+    .dateline .d b{font-size:17px}
+    .card{min-height:150px}
+    .player{margin-top:8px;padding:8px 10px}
+    .play{width:44px;height:44px}
+    .actions{padding-top:6px}
+  }
+  #view-box,#view-settings{overflow-y:auto;-webkit-overflow-scrolling:touch}
   .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .brand{display:flex;align-items:center;gap:10px}
   .logo{width:36px;height:36px;border-radius:50%;border:1.6px dashed var(--accent);display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--accent);background:var(--sunk);flex:none}
@@ -29,25 +43,28 @@
   .chip{font-size:12px;font-weight:700;padding:6px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
   .preview{margin-top:10px;font-size:12.5px;background:var(--sunk);border-radius:12px;padding:8px 12px;display:flex;justify-content:space-between;gap:8px;align-items:center}
   .preview button{border:0;background:none;font-weight:700;color:var(--accent);padding:0}
-  .dateline{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:12px 4px 10px}
+  .dateline{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:10px 4px 8px;flex:none}
   .dateline .d{font-size:13px;color:var(--sub)}
-  .dateline .d b{display:block;font-size:21px;color:var(--ink);font-weight:800;letter-spacing:-.4px;margin-top:2px;text-wrap:balance}
-  .seg{display:flex;gap:2px;background:var(--sunk);border-radius:14px;padding:4px;margin-bottom:12px}
-  .seg button{flex:1;border:0;background:none;padding:8px 0;border-radius:10px;font-size:13px;font-weight:600;color:var(--sub)}
+  .dateline .d b{display:block;font-size:19px;color:var(--ink);font-weight:800;letter-spacing:-.4px;margin-top:2px;text-wrap:balance}
+  .seg{display:flex;gap:2px;background:var(--sunk);border-radius:14px;padding:4px;margin-bottom:10px;flex:none}
+  .seg button{flex:1;border:0;background:none;padding:7px 0;border-radius:10px;font-size:13px;font-weight:600;color:var(--sub)}
   .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:800;box-shadow:0 2px 6px -2px rgba(0,0,0,.18)}
-  .card{position:relative;aspect-ratio:3/3.75;max-width:100%;border-radius:28px;overflow:hidden;box-shadow:0 18px 36px -18px rgba(30,25,15,.5);background:#334}
+  .card{position:relative;flex:1;min-height:180px;max-width:100%;border-radius:28px;overflow:hidden;box-shadow:0 18px 36px -18px rgba(30,25,15,.5);background:#334}
   .card svg.bg{position:absolute;inset:0;width:100%;height:100%}
   .card .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 34%,rgba(12,16,26,.6) 62%,rgba(12,16,26,.9) 100%)}
   .card .chips{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:8px}
   .card .chips span{font-size:11.5px;font-weight:700;color:#fff;padding:6px 11px;border-radius:99px;background:rgba(20,24,34,.3);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.35)}
-  .vtext{position:absolute;left:22px;right:22px;bottom:22px;color:#fff}
+  .vtext{position:absolute;left:22px;right:22px;bottom:22px;color:#fff;max-height:calc(100% - 70px);overflow-y:auto;scrollbar-width:none}
+  .vtext::-webkit-scrollbar{display:none}
   .vtext q{display:block;quotes:none;font-family:var(--serif);font-weight:700;font-size:clamp(18px,5.2vw,23px);line-height:1.6;word-break:keep-all;text-shadow:0 1px 10px rgba(0,0,0,.3)}
   .vtext q.en{font-family:'Lora',Georgia,serif;font-weight:600;line-height:1.45}
   .vtext q.ja{font-family:'Noto Serif JP',serif;font-weight:600;letter-spacing:.3px;word-break:normal;line-break:strict}
   .vtext q.zh{font-family:'Noto Serif SC',serif;font-weight:600;letter-spacing:.8px;word-break:normal}
   .vtext q.en{word-break:normal;overflow-wrap:break-word}
   .vtext q.long{font-size:clamp(15px,4.3vw,19px)}
-  .vtext q .rest{opacity:.55}
+  .vtext .c{transition:opacity .2s}
+  .vtext .c.todo{opacity:.5}
+  .vtext .c.now{background:linear-gradient(transparent 58%,rgba(231,199,132,.62) 58%)}
   .vtext .sub{font-family:'Lora',Georgia,serif;font-style:italic;font-size:14px;line-height:1.5;opacity:.88;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.28)}
   .vtext .sub.cjk{font-family:var(--sans);font-style:normal}
   .vtext .ref{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;font-weight:500;letter-spacing:.4px}
@@ -57,17 +74,17 @@
   .locked p{margin:0 0 18px;font-size:14px;opacity:.85;line-height:1.6}
   .btn{border:0;border-radius:14px;padding:13px 18px;font-weight:800;font-size:15px;background:var(--gold);color:#23262E}
   .btn.ghost{background:var(--sunk);color:var(--ink)}
-  .player{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:12px 14px;display:flex;align-items:center;gap:14px}
-  .play{width:54px;height:54px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;background:var(--c,#4E8B5C)}
+  .player{flex:none;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:10px 12px;display:flex;align-items:center;gap:14px}
+  .play{width:50px;height:50px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;background:var(--c,#4E8B5C)}
   .play:disabled{opacity:.4;cursor:default}
   .pinfo{flex:1;min-width:0}
   .pinfo .t{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700}
   .pinfo .t span{font-weight:500;color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}
   .bar{height:6px;border-radius:3px;background:var(--sunk);margin-top:9px;overflow:hidden}
   .bar i{display:block;height:100%;width:0;background:var(--c,#4E8B5C);border-radius:3px;transition:width .2s linear}
-  .pinfo small{display:block;font-size:11.5px;color:var(--sub);margin-top:6px}
+  .pinfo small{display:block;font-size:11.5px;color:var(--sub);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .speed{border:0;font-size:12px;font-weight:800;padding:7px 9px;border-radius:10px;background:var(--sunk);flex:none;font-variant-numeric:tabular-nums}
-  .actions{display:flex;gap:18px;padding:14px 6px 0;font-size:13px;color:var(--sub)}
+  .actions{flex:none;display:flex;gap:18px;padding:10px 6px 0;font-size:13px;color:var(--sub)}
   .actions button{border:0;background:none;padding:0;display:flex;gap:6px;align-items:center;color:inherit}
   .hint{text-align:center;font-size:12px;color:var(--sub);margin-top:14px}
   h2{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:18px 4px 4px}
@@ -92,20 +109,21 @@
   .opt[aria-pressed="true"]{background:var(--dark);color:var(--on-dark);border-color:var(--dark)}
   input[type=date]{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px;font:inherit}
   code{font-size:12px;background:var(--sunk);padding:2px 6px;border-radius:6px;word-break:break-all}
-  .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+  .tabbar{flex:none;background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
   .tabbar div{display:flex;max-width:460px;width:100%}
-  .tabbar button{flex:1;border:0;background:none;padding:10px 0 12px;font-size:11px;color:var(--sub);display:grid;justify-items:center;gap:3px}
+  .tabbar button{flex:1;border:0;background:none;padding:8px 0 10px;font-size:11px;color:var(--sub);display:grid;justify-items:center;gap:3px}
   .tabbar button[aria-current="page"]{color:var(--ink);font-weight:800}
   .overlay{position:fixed;inset:0;background:rgba(10,12,18,.6);display:grid;place-items:center;z-index:30;padding:20px max(16px,env(safe-area-inset-left,0px))}
   .welcome{width:min(400px,100%);background:var(--surface);border-radius:26px;overflow:hidden}
-  .welcome .card{border-radius:0;box-shadow:none;aspect-ratio:3/3.4}
+  .welcome .card{flex:none;border-radius:0;box-shadow:none;aspect-ratio:3/3.4}
   .welcome .body{padding:16px 18px 18px;text-align:center}
   .welcome .body b{font-size:17px}
   .welcome .body p{font-size:13px;color:var(--sub);margin:6px 0 14px}
   .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);background:#23262E;color:#fff;border-radius:14px;padding:11px 16px;font-size:13.5px;z-index:40;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
-  @media (prefers-reduced-motion:reduce){ .bar i{transition:none} }
+  @media (prefers-reduced-motion:reduce){ .bar i,.vtext .c{transition:none} }
 </style>
 
+<div class="shell">
 <div class="app">
   <div class="top">
     <div class="brand"><div class="logo">LOGO</div><div><b>○○교회</b><small>말씀 키링 · 오늘의 한 구절</small></div></div>
@@ -126,7 +144,6 @@
       <button type="button" id="copyBtn">말씀 복사</button>
       <button type="button" id="dualBtn">두 언어 함께 보기</button>
     </div>
-    <p class="hint" id="hintText">내일 키링을 다시 대면 새로운 말씀이 열려요</p>
   </section>
 
   <section id="view-box" hidden>
@@ -163,6 +180,7 @@
   <button type="button" data-view="box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>보관함</button>
   <button type="button" data-view="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 8a6 6 0 0 1 0 8M11 5.5a10 10 0 0 1 0 13M15 3a14 14 0 0 1 0 18"/></svg>키링·설정</button>
 </div></nav>
+</div>
 
 <script src="lib/daily.js"></script>
 <script src="lib/art.js"></script>
@@ -249,11 +267,11 @@
     $("card").style.setProperty("--c", color(c));
     $("card").innerHTML = `${MalsseumArt.artFor(c, "cd")}<div class="shade"></div>
       ${opened ? `<div class="chips"><span>${esc(chipLeft)}</span><span>${esc(c.key ? "특별 카드" : c.theme)}</span></div>
-      <div class="vtext"><q class="${L}${long || store.dual ? " long" : ""}" id="verseQ">${esc(text)}</q>
-      ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${esc(c[subLang])}</div>` : ""}
+      <div class="vtext"><q class="${L}${long || store.dual ? " long" : ""}" id="verseQ">${chunkHtml(text, L)}</q>
+      ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${chunkHtml(c[subLang], subLang)}</div>` : ""}
       <div class="ref">${esc(ref)}${store.dual ? " · " + esc(c["ref_" + subLang]) : ""}</div></div>` : ""}
       ${opened ? "" : `<div class="locked"><div><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
-        <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요</p><button class="btn" type="button" id="unlockBtn">키링 없이 열어 보기</button></div></div>`}`;
+        <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요<br>키링이 없으면 아래 버튼으로 열 수 있어요</p><button class="btn" type="button" id="unlockBtn">키링 없이 열어 보기</button></div></div>`}`;
     const ub = $("unlockBtn"); if (ub) ub.onclick = () => openToday(false);
     document.querySelector(".player").style.setProperty("--c", color(c));
     $("playBtn").disabled = !opened;
@@ -264,8 +282,21 @@
     $("voiceText").textContent = voiceLabel();
     $("playTime").textContent = "";
     $("dualBtn").textContent = store.dual ? "한 언어로 보기" : "두 언어 함께 보기";
-    $("hintText").textContent = isPreview ? "미리보기 카드는 보관함에 들어가지 않아요" : (opened ? "내일 키링을 다시 대면 새로운 말씀이 열려요" : "키링이 없으면 아래 '키링·설정'에서도 열 수 있어요");
     document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String(store.dual) === (b.dataset.dual === "1" ? "true" : "false")));
+    fitText();
+  }
+
+  // 긴 구절은 카드 안에 다 들어가도록 글자 크기를 줄입니다.
+  function fitText(){
+    const card = $("card"), vt = card && card.querySelector(".vtext"); if (!vt) return;
+    const q = vt.querySelector("q"), sub = vt.querySelector(".sub");
+    q.style.fontSize = ""; if (sub) sub.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(q).fontSize), guard = 0;
+    const room = card.clientHeight - 74;
+    while (vt.scrollHeight > room && size > 11 && guard++ < 40) {
+      size -= 1; q.style.fontSize = size + "px";
+      if (sub) sub.style.fontSize = Math.max(10, Math.round(size * .68)) + "px";
+    }
   }
 
   function renderBox(){
@@ -304,46 +335,98 @@
     ? `<svg width="22" height="22" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.3" fill="#fff"/><rect x="14" y="5" width="4" height="14" rx="1.3" fill="#fff"/></svg>`
     : `<svg width="22" height="22" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#fff"/></svg>`; }
   function fmt(ms){ const s = Math.max(0, Math.round(ms / 1000)); return `${Math.floor(s/60)}:${pad(s%60)}`; }
-  function highlight(i){
-    const q = $("verseQ"); if (!q) return;
-    const t = current[store.lang];
-    q.innerHTML = i < 0 ? esc(t) : `${esc(t.slice(0, i))}<span class="rest">${esc(t.slice(i))}</span>`;
+  // 문장을 짧은 구절로 나눕니다. 한 구절씩 읽고, 휴대폰이 그 구절을 읽기 시작할 때 색을 바꿉니다.
+  function splitChunks(text, lang){
+    let out = [];
+    if (lang === "ko") {
+      const words = text.match(/\S+\s*/g) || [text];
+      for (let i = 0; i < words.length; i += 3) out.push(words.slice(i, i + 3).join(""));
+    } else {
+      const brk = lang === "en" ? ",;:.!?" : "、。，；：！？", close = "”’」』)";
+      let cur = "";
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], next = text[i + 1] || "";
+        cur += ch;
+        const atBreak = brk.includes(ch) || (close.includes(ch) && brk.includes(text[i - 1] || ""));
+        if (atBreak && !close.includes(next)) {
+          while (text[i + 1] === " ") { cur += " "; i++; }
+          out.push(cur); cur = "";
+        }
+      }
+      if (cur) out.push(cur);
+      const maxWords = 7, maxCjk = 18;
+      out = out.flatMap((c) => {
+        if (lang === "en") { const w = c.match(/\S+\s*/g) || [c]; if (w.length <= maxWords + 2) return [c]; const r = []; for (let i = 0; i < w.length; i += maxWords) r.push(w.slice(i, i + maxWords).join("")); return r; }
+        if (c.length <= maxCjk + 6) return [c];
+        const r = []; for (let i = 0; i < c.length; i += maxCjk) r.push(c.slice(i, i + maxCjk)); return r;
+      });
+    }
+    const merged = [];
+    out.forEach((c) => { if (merged.length && c.trim().length <= 2) merged[merged.length - 1] += c; else merged.push(c); });
+    return merged;
   }
+  function chunkHtml(text, lang){ return splitChunks(text, lang).map((c, i) => `<span class="c" data-i="${i}">${esc(c)}</span>`).join(""); }
   function speakParts(){
-    const parts = [[store.lang, current[store.lang]]];
-    if (store.dual) { const s = store.lang === "ko" ? "en" : "ko"; parts.push([s, current[s]]); }
-    return parts;
+    const parts = [{lang: store.lang, el: "#verseQ"}];
+    if (store.dual) parts.push({lang: store.lang === "ko" ? "en" : "ko", el: ".vtext .sub"});
+    return parts.map((p) => Object.assign(p, {chunks: splitChunks(current[p.lang], p.lang)}));
   }
+  function setMark(parts, pi, ci){
+    parts.forEach((p, i) => { const box = document.querySelector(p.el); if (!box) return;
+      box.querySelectorAll(".c").forEach((sp, j) => {
+        sp.classList.remove("now", "todo");
+        if (i > pi || (i === pi && j > ci)) sp.classList.add("todo");
+        else if (i === pi && j === ci) sp.classList.add("now");
+      }); });
+  }
+  function clearMarks(){ document.querySelectorAll(".vtext .c").forEach((sp) => sp.classList.remove("now", "todo")); }
+  let run = 0;
   function startSpeak(){
     if (!synth) { toast("이 기기에서는 읽어주기를 쓸 수 없어요"); return; }
-    synth.cancel();
+    run++; synth.cancel();
+    const my = run;
     const parts = speakParts();
+    const seq = []; parts.forEach((p, pi) => p.chunks.forEach((t, ci) => seq.push({p, pi, ci, t})));
+    const total = seq.reduce((a, x) => a + x.t.length, 0) || 1;
     const perChar = {ko:150, en:65, ja:150, zh:230};
-    estMs = parts.reduce((a,[l,t]) => a + t.length * perChar[l], 0) / store.rate;
-    speaking = true; startAt = Date.now(); boundary = 0;
+    let msPerChar = seq.reduce((a, x) => a + x.t.length * perChar[x.p.lang], 0) / total / store.rate;
+    let doneChars = 0, chunkStart = 0, curLen = 0, spentMs = 0, spentChars = 0;
+    speaking = true; startAt = Date.now();
     $("playBtn").innerHTML = playIcon(true); $("playTitle").textContent = "읽어주는 중…";
-    highlight(0);
-    parts.forEach(([l, t], idx) => {
-      const u = new SpeechSynthesisUtterance(t);
-      u.lang = VOICE[l]; u.rate = store.rate; const v = pickVoice(l); if (v) u.voice = v;
-      if (idx === 0) u.onboundary = (e) => { if (e.charIndex != null) { boundary = e.charIndex; highlight(boundary); } };
-      if (idx === parts.length - 1) { u.onend = () => endSpeak(true); u.onerror = () => endSpeak(false); }
-      synth.speak(u);
-    });
+    setMark(parts, 0, -1);
+    setTimeout(() => {
+      if (my !== run) return;
+      seq.forEach((x, k) => {
+        const u = new SpeechSynthesisUtterance(x.t.trim());
+        u.lang = VOICE[x.p.lang]; u.rate = store.rate; const v = pickVoice(x.p.lang); if (v) u.voice = v;
+        u.onstart = () => { if (my !== run) return; chunkStart = Date.now(); curLen = x.t.length; setMark(parts, x.pi, x.ci); };
+        u.onend = () => {
+          if (my !== run) return;
+          const el = Date.now() - chunkStart;
+          if (chunkStart && el > 80) { spentMs += el; spentChars += x.t.length; msPerChar = spentMs / spentChars; }
+          doneChars += x.t.length; curLen = 0;
+          if (k === seq.length - 1) endSpeak(true);
+        };
+        u.onerror = () => { if (my !== run) return; endSpeak(false); };
+        synth.speak(u);
+      });
+    }, 80);
     clearInterval(timer);
     timer = setInterval(() => {
-      const el = Date.now() - startAt, p = Math.min(.98, el / estMs);
+      if (my !== run) return;
+      const el = Date.now() - startAt;
+      const partial = curLen ? Math.min(curLen, (Date.now() - chunkStart) / msPerChar) : 0;
+      const p = Math.min(.99, (doneChars + partial) / total);
       $("playBar").style.width = (p * 100).toFixed(1) + "%";
-      $("playTime").textContent = `${fmt(el)} / ${fmt(Math.max(estMs, el))}`;
-      if (boundary <= 0) { const t = current[store.lang]; highlight(Math.floor(t.length * Math.min(1, el / (estMs / parts.length)))); }
+      $("playTime").textContent = `${fmt(el)} / ${fmt(el + (total - doneChars - partial) * msPerChar)}`;
     }, 200);
   }
   function endSpeak(done){
-    clearInterval(timer); speaking = false;
+    run++; clearInterval(timer); speaking = false;
     $("playBtn").innerHTML = playIcon(false); $("playTitle").textContent = done ? "다시 듣기" : "말씀 듣기";
-    $("playBar").style.width = done ? "100%" : "0"; highlight(-1);
+    $("playBar").style.width = done ? "100%" : "0"; clearMarks();
   }
-  function stopSpeak(){ if (synth) synth.cancel(); if (speaking) endSpeak(false); }
+  function stopSpeak(){ run++; if (synth) synth.cancel(); if (speaking) endSpeak(false); }
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener("click", (e) => {
@@ -371,6 +454,10 @@
     store.first = null; store.opened = {}; save(); resetArmed = false; $("resetBtn").textContent = "보관함과 기록 지우기"; toast("기록을 지웠어요"); show("today");
   };
   if (synth && "onvoiceschanged" in synth) synth.onvoiceschanged = () => { if (view === "today" && !speaking) $("voiceText").textContent = voiceLabel(); };
+
+  let rz = 0;
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (view === "today") fitText(); }, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitText(); });
 
   /* ---------- 시작 ---------- */
   Promise.all([fetch("data/verses-365.json").then(r => r.json()), fetch("data/calendar.json").then(r => r.json())])
