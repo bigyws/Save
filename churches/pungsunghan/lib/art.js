@@ -152,7 +152,7 @@ function hill(y, amp, r){
   return `M0 ${a.toFixed(0)}C90 ${b.toFixed(0)} 170 ${c.toFixed(0)} 250 ${(b+10).toFixed(0)}S330 ${(a-6).toFixed(0)} 360 ${c.toFixed(0)}V500H0Z`;
 }
 const W = "#FFFFFF";
-function emblem(svg, night){ return `<g opacity="${night ? .9 : .92}" style="filter:drop-shadow(0 2px 6px rgba(0,0,0,.18))">${svg}</g>`; }
+function emblem(svg, night){ return `<g transform="translate(0 -22)" opacity="${night ? .9 : .92}" style="filter:drop-shadow(0 2px 6px rgba(0,0,0,.18))">${svg}</g>`; }
 const OBJ = {
   lyre: (c) => emblem(`<g transform="translate(180 128)" fill="none" stroke="${W}" stroke-linecap="round"><path d="M-24 34C-42-6-32-40-12-48M24 34C42-6 32-40 12-48" stroke-width="7"/><path d="M-30 34H30" stroke-width="8"/><path d="M-27-18H27" stroke-width="5"/><path d="M-12-18V34M-4-18V34M4-18V34M12-18V34" stroke-width="2"/></g>
     <g fill="${W}"><circle cx="252" cy="96" r="6"/><rect x="256" y="70" width="2.5" height="26"/><circle cx="110" cy="84" r="5"/><rect x="113.5" y="62" width="2.2" height="22"/></g>`, c.night),
@@ -172,8 +172,8 @@ const OBJ = {
     return `<path d="M${x.toFixed(0)} ${y.toFixed(0)}q${w.toFixed(1)} -${w.toFixed(1)} ${(w*2).toFixed(1)} 0q${w.toFixed(1)} -${w.toFixed(1)} ${(w*2).toFixed(1)} 0" fill="none" stroke="${c.night ? "#FFF6DD" : "#2B2A33"}" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>`; }).join(""),
   pillar: (c) => `<g fill="${W}" opacity=".85">${Array.from({length:7}, (_, i) => `<ellipse cx="${(250 + Math.sin(i)*8).toFixed(0)}" cy="${250 - i*26}" rx="${26 - i*1.2}" ry="16"/>`).join("")}</g><ellipse cx="250" cy="250" rx="60" ry="10" fill="${W}" opacity=".25"/>`,
   cross: (c) => `<g transform="translate(250 232)" fill="${c.ink}"><rect x="-5" y="-70" width="10" height="84" rx="2"/><rect x="-28" y="-50" width="56" height="9" rx="2"/></g><g transform="translate(205 240)" fill="${c.ink}" opacity=".7"><rect x="-3" y="-40" width="6" height="48"/><rect x="-16" y="-28" width="32" height="6"/></g><g transform="translate(295 240)" fill="${c.ink}" opacity=".7"><rect x="-3" y="-40" width="6" height="48"/><rect x="-16" y="-28" width="32" height="6"/></g>`,
-  stable: (c) => `<g transform="translate(250 92)" fill="#FFF3C4"><path d="M0-24L5-5L24 0L5 5L0 24L-5 5L-24 0L-5-5Z"/><circle r="46" opacity=".14"/></g><path d="M250 116L170 250" stroke="#FFF3C4" stroke-width="2" opacity=".25"/>
-    <g transform="translate(160 236)"><path d="M-40 0L0-30L40 0V30H-40Z" fill="${c.ink}"/><path d="M-46 2L0-34L46 2" stroke="${c.ink}" stroke-width="6" fill="none"/><rect x="-12" y="6" width="24" height="24" fill="#FFD98A"/><circle cx="0" cy="18" r="30" fill="#FFD98A" opacity=".18"/></g>`,
+  star: (c) => `<g transform="translate(250 84)" fill="#FFF3C4"><path d="M0-24L5-5L24 0L5 5L0 24L-5 5L-24 0L-5-5Z"/><circle r="46" opacity=".14"/></g>`,
+  stable: (c) => `<g transform="translate(160 236)"><path d="M-40 0L0-30L40 0V30H-40Z" fill="${c.ink}"/><path d="M-46 2L0-34L46 2" stroke="${c.ink}" stroke-width="6" fill="none"/><rect x="-12" y="6" width="24" height="24" fill="#FFD98A"/><circle cx="0" cy="18" r="30" fill="#FFD98A" opacity=".18"/></g>`,
   tomb: (c) => `<g transform="translate(200 240)"><path d="M-70 30C-70-26 70-26 70 30Z" fill="${mix(c.ink, "#A89D8A", .5)}"/><ellipse cx="-6" cy="8" rx="20" ry="24" fill="#3A3328"/><circle cx="46" cy="14" r="22" fill="${mix(c.ink, "#C2B8A3", .55)}"/></g>`,
   grapes: (c) => `<g transform="translate(276 210)"><path d="M-80-30C-40-60 20-50 40-20" stroke="#5E7A3A" stroke-width="5" fill="none"/><path d="M-30-46c10-16 34-14 36 4-14 8-28 8-36-4z" fill="#6E9A45"/><path d="M14-40c14-10 30-2 28 14-14 4-24 0-28-14z" fill="#5E8A3C"/>
     ${[[0,0],[12,0],[24,0],[6,11],[18,11],[30,11],[12,22],[24,22],[18,33]].map(([x,y]) => `<circle cx="${x-6}" cy="${y-18}" r="7" fill="#6B3F7A"/>`).join("")}</g>`,
@@ -216,6 +216,15 @@ function scenery(scene, c, p){
   }
   return `<path d="${hill(225,40,r)}" fill="${H[0]}"/><path d="${hill(275,46,r)}" fill="${H[1]}"/><path d="${hill(330,40,r)}" fill="${H[2]}"/>`;
 }
+// 땅 위에 놓이는 소재: 풍경과 함께 위로 올려서 말씀 글씨에 가리지 않게 합니다.
+const GROUND = ["cross","stable","tomb","grapes","wheat","tree","stream","flowers","castle","boat","village","house","path","sprout","pillar"];
+const LIFT = 70;
+// 이미 그려 둔 그림(양 떼, 등불)의 풍경을 위로 올립니다. 하늘 배경 사각형 뒤의 모든 것을 dy만큼 올리고 아래를 채웁니다.
+function lift(svg, dy, fill, base){
+  const at = svg.indexOf('<path d="M0 '), end = svg.lastIndexOf("</svg>");
+  if (at < 0) return svg;
+  return svg.slice(0, at) + `<g class="land" data-base="${base}" transform="translate(0 -${dy})">` + svg.slice(at, end) + `</g><rect class="landfill" y="${500 - dy - 2}" width="360" height="${dy + 2}" fill="${fill}"/>` + svg.slice(end);
+}
 function artGeneric(p, card){
   const base = PALETTES[card.month] || PALETTES[SPECIAL_MONTH[card.key]] || PALETTES["1월"];
   const seed = card.day || (card.key ? card.key.length * 37 + 400 : 7);
@@ -236,21 +245,36 @@ function artGeneric(p, card){
   const clouds = night || scene === "water" && r() < .5 ? "" : Array.from({length:1 + Math.floor(r()*2)}, () => { const x = 30 + r()*260, y = 50 + r()*110;
     return `<g fill="#fff" opacity=".7"><ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="38" ry="10"/><ellipse cx="${(x+18).toFixed(0)}" cy="${(y-7).toFixed(0)}" rx="22" ry="11"/></g>`; }).join("");
   const obj = m.obj && OBJ[m.obj] ? OBJ[m.obj](c) : "";
-  const front = ["wheat","flowers","path","stream"].includes(m.obj);
+  const ground = GROUND.includes(m.obj);
   return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMin slice"><defs>
     <linearGradient id="${p}sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
     <linearGradient id="${p}wt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(sky[1], hills[0], .3)}"/><stop offset="1" stop-color="${mix(hills[2], sky[0], .2)}"/></linearGradient>
     <radialGradient id="${p}sg"><stop offset="0" stop-color="${c.sun}" stop-opacity=".9"/><stop offset="1" stop-color="${c.sun}" stop-opacity="0"/></radialGradient></defs>
     <rect width="360" height="500" fill="url(#${p}sk)"/>${stars}${sun}${clouds}
-    ${front ? "" : ""}${scenery(scene, c, p)}${obj}
+    <g class="land" data-base="300" transform="translate(0 -${LIFT})">${scenery(scene, c, p)}${ground ? obj : ""}</g>
+    <rect class="landfill" y="${500 - LIFT - 2}" width="360" height="${LIFT + 2}" fill="${hills[2]}"/>${ground ? "" : obj}${m.obj === "stable" ? OBJ.star(c) : ""}
     <path d="M0 420C120 400 240 430 360 406V500H0Z" fill="#000" opacity=".16"/></svg>`;
 }
 function artFor(card, prefix){
   const p = prefix || ("a" + Math.random().toString(36).slice(2, 7));
-  if (card.motif === "양과 초장") return artShepherd(p);
+  if (card.motif === "양과 초장") return lift(artShepherd(p), 55, "#457F4B", 320);
   if (card.motif === "독수리와 산") return artEagle(p);
-  if (card.motif === "등불과 밤길") return artLantern(p);
+  if (card.motif === "등불과 밤길") return lift(artLantern(p), 40, "#0E1833", 330);
   return artGeneric(p, card);
 }
-root.MalsseumArt = { artFor };
+// 카드 크기를 보고, 땅 위 소재가 말씀 글씨 바로 위에 오도록 풍경을 올립니다.
+function fitLand(card){
+  if (!card) return;
+  const svg = card.querySelector("svg.bg"); if (!svg) return;
+  const land = svg.querySelector(".land"), fill = svg.querySelector(".landfill"); if (!land) return;
+  const cw = card.clientWidth, ch = card.clientHeight; if (!cw || !ch) return;
+  const s = Math.max(cw / 360, ch / 500);
+  const vt = card.querySelector(".vtext");
+  const clearPx = vt ? vt.offsetTop - 10 : ch * .62;
+  const base = Number(land.getAttribute("data-base")) || 300;
+  const dy = Math.max(30, Math.min(175, base - clearPx / s));
+  land.setAttribute("transform", `translate(0 -${dy.toFixed(0)})`);
+  if (fill) { fill.setAttribute("y", (500 - dy - 2).toFixed(0)); fill.setAttribute("height", (dy + 2).toFixed(0)); }
+}
+root.MalsseumArt = { artFor, fitLand };
 })(this);

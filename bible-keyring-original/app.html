@@ -239,7 +239,7 @@
       <div class="vtext"><q class="long">${esc(w[store.lang] || w.ko)}</q><div class="ref">${esc(refWithVersion(w, store.lang))}</div></div></div>
       <div class="body"><b>○○교회 말씀 키링에 오신 것을 환영합니다</b><p>오늘부터 하루 한 구절, 말씀 카드가 열려요.</p><button class="btn" type="button" style="width:100%">오늘의 말씀 보기</button></div></div>`;
     o.querySelector("button").onclick = () => o.remove();
-    document.body.appendChild(o); o.querySelector("button").focus();
+    document.body.appendChild(o); MalsseumArt.fitLand(o.querySelector(".card")); o.querySelector("button").focus();
   }
 
   function render(){
@@ -285,7 +285,7 @@
     $("playTime").textContent = "";
     $("dualBtn").textContent = store.dual ? "한 언어로 보기" : "두 언어 함께 보기";
     document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String(store.dual) === (b.dataset.dual === "1" ? "true" : "false")));
-    fitText();
+    fitArt();
   }
 
   // 긴 구절은 카드 안에 다 들어가도록 글자 크기를 줄입니다.
@@ -300,6 +300,7 @@
       if (sub) sub.style.fontSize = Math.max(10, Math.round(size * .68)) + "px";
     }
   }
+  function fitArt(){ fitText(); if (window.MalsseumArt.fitLand) MalsseumArt.fitLand($("card")); }
 
   function renderBox(){
     const keys = Object.keys(store.opened).sort().reverse();
@@ -475,8 +476,8 @@
   if (synth && "onvoiceschanged" in synth) synth.onvoiceschanged = () => { if (view === "today" && !speaking) $("voiceText").textContent = voiceLabel(); };
 
   let rz = 0;
-  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (view === "today") fitText(); }, 150); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitText(); });
+  window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (view === "today") fitArt(); }, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitArt(); });
 
   /* ---------- 시작 ---------- */
   Promise.all([fetch("data/verses-365.json").then(r => r.json()), fetch("data/calendar.json").then(r => r.json())])
