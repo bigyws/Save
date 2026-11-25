@@ -13,7 +13,7 @@ function sheep(x,y,s,flip){
   </g>`;
 }
 function artShepherd(p){
-  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMin slice">
   <defs>
     <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6E3C4"/><stop offset=".55" stop-color="#FAD7AE"/><stop offset="1" stop-color="#F6C7A0"/></linearGradient>
     <radialGradient id="${p}sun"><stop offset="0" stop-color="#FFF7E2"/><stop offset=".35" stop-color="#FFF1D2" stop-opacity=".9"/><stop offset="1" stop-color="#FFE7C4" stop-opacity="0"/></radialGradient>
@@ -43,7 +43,7 @@ function artShepherd(p){
   </svg>`;
 }
 function artEagle(p){
-  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMin slice">
   <defs>
     <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C4777"/><stop offset=".45" stop-color="#6D8CC0"/><stop offset=".72" stop-color="#C9B8C8"/><stop offset="1" stop-color="#F3C9A2"/></linearGradient>
     <radialGradient id="${p}sun" cx=".5" cy=".5"><stop offset="0" stop-color="#FFF4DA"/><stop offset=".3" stop-color="#FFE3B8" stop-opacity=".8"/><stop offset="1" stop-color="#FFD8A8" stop-opacity="0"/></radialGradient>
@@ -74,7 +74,7 @@ function artEagle(p){
 }
 function artLantern(p){
   const stars=[[30,40],[70,22],[118,58],[160,30],[210,64],[300,40],[330,90],[50,110],[250,24],[280,120],[20,170],[340,170],[96,150],[190,110]];
-  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice">
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMin slice">
   <defs>
     <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1A3A"/><stop offset=".6" stop-color="#22386A"/><stop offset="1" stop-color="#3B5487"/></linearGradient>
     <radialGradient id="${p}glow"><stop offset="0" stop-color="#FFE1A0" stop-opacity=".95"/><stop offset=".25" stop-color="#FFC966" stop-opacity=".55"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient>
@@ -237,7 +237,7 @@ function artGeneric(p, card){
     return `<g fill="#fff" opacity=".7"><ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="38" ry="10"/><ellipse cx="${(x+18).toFixed(0)}" cy="${(y-7).toFixed(0)}" rx="22" ry="11"/></g>`; }).join("");
   const obj = m.obj && OBJ[m.obj] ? OBJ[m.obj](c) : "";
   const front = ["wheat","flowers","path","stream"].includes(m.obj);
-  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMid slice"><defs>
+  return `<svg class="bg" viewBox="0 0 360 500" preserveAspectRatio="xMidYMin slice"><defs>
     <linearGradient id="${p}sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient>
     <linearGradient id="${p}wt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mix(sky[1], hills[0], .3)}"/><stop offset="1" stop-color="${mix(hills[2], sky[0], .2)}"/></linearGradient>
     <radialGradient id="${p}sg"><stop offset="0" stop-color="${c.sun}" stop-opacity=".9"/><stop offset="1" stop-color="${c.sun}" stop-opacity="0"/></radialGradient></defs>
