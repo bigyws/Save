@@ -186,8 +186,8 @@
 </div></nav>
 </div>
 
-<script src="lib/daily.js"></script>
-<script src="lib/art.js"></script>
+<script src="lib/daily.js?v=20261125"></script>
+<script src="lib/art.js?v=20261125"></script>
 <script>
 (function(){
   const $ = (id) => document.getElementById(id);
@@ -484,7 +484,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitArt(); });
 
   /* ---------- 시작 ---------- */
-  Promise.all([fetch("data/verses-365.json").then(r => r.json()), fetch("data/calendar.json").then(r => r.json())])
+  Promise.all([fetch("data/verses-365.json?v=20261125").then(r => r.json()), fetch("data/calendar.json?v=20261125").then(r => r.json())])
     .then(([d, c]) => {
       DATA = d; CAL = c;
       const tagged = location.hash === "#tag" || /[?&]tag\b/.test(location.search);
