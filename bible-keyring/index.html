@@ -95,6 +95,15 @@
   .actions{flex:none;display:flex;gap:18px;padding:10px 6px 0;font-size:13px;color:var(--sub)}
   .actions button{border:0;background:none;padding:0;display:flex;gap:6px;align-items:center;color:inherit}
   .hint{flex:none;text-align:center;font-size:12px;color:var(--sub);margin:8px 0 0}
+  .dots{flex:none;display:flex;justify-content:center;gap:2px;padding:4px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+  .dots button{width:30px;height:24px;border:0;padding:0;background:none;display:grid;place-items:center}
+  .dots button::after{content:"";width:8px;height:8px;border-radius:4px;background:var(--line);transition:width .25s,background .25s}
+  .dots button[aria-current="page"]::after{width:22px;background:var(--ink)}
+  @keyframes inR{from{opacity:0;transform:translateX(42px)}to{opacity:1;transform:none}}
+  @keyframes inL{from{opacity:0;transform:translateX(-42px)}to{opacity:1;transform:none}}
+  .app > section.in-r{animation:inR .28s ease-out}
+  .app > section.in-l{animation:inL .28s ease-out}
+  @media (prefers-reduced-motion:reduce){ .app > section.in-r,.app > section.in-l{animation:none} }
   .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--sunk);color:var(--ink);display:grid;place-items:center;flex:none}
   .wave{display:flex;gap:2.5px;align-items:center;height:26px;margin-top:6px}
   .wave i{flex:1;max-width:4px;border-radius:2px;background:var(--line);transition:background .15s}
@@ -220,11 +229,11 @@
   </section>
 </div>
 
-<nav class="tabbar" aria-label="메뉴"><div>
-  <button type="button" data-view="today" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6"/></svg>오늘</button>
-  <button type="button" data-view="box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>보관함</button>
-  <button type="button" data-view="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 8a6 6 0 0 1 0 8M11 5.5a10 10 0 0 1 0 13M15 3a14 14 0 0 1 0 18"/></svg>키링·설정</button>
-</div></nav>
+<nav class="dots" aria-label="화면">
+  <button type="button" data-view="today" aria-current="page" aria-label="오늘"></button>
+  <button type="button" data-view="box" aria-label="말씀 보관함"></button>
+  <button type="button" data-view="settings" aria-label="키링·설정"></button>
+</nav>
 </div>
 
 <script src="lib/daily.js?v=20261125"></script>
@@ -373,7 +382,7 @@
   function show(v){
     view = v;
     ["today","box","settings"].forEach(k => $("view-" + k).hidden = k !== v);
-    document.querySelectorAll(".tabbar button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    document.querySelectorAll(".dots button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     if (v === "today") render(); else stopSpeak();
     if (v === "box") renderBox();
     if (v === "settings") { $("adminArea").hidden = !store.admin; $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
@@ -559,6 +568,31 @@
   window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (view === "today") fitArt(); }, 150); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === "today") fitArt(); });
 
+  /* ---------- 옆으로 밀어서 화면 넘기기: 오늘 → 보관함 → 교회소식 → 오늘 (반대로도) ---------- */
+  const ORDER = ["today", "box", "settings"];
+  function go(step){
+    const v = ORDER[(ORDER.indexOf(view) + step + ORDER.length) % ORDER.length];
+    show(v);
+    const sec = $("view-" + v); sec.classList.remove("in-l", "in-r"); void sec.offsetWidth; sec.classList.add(step > 0 ? "in-r" : "in-l");
+  }
+  let sx = 0, sy = 0, st = 0, tracking = false;
+  const swipeArea = document.querySelector(".app");
+  swipeArea.addEventListener("touchstart", (e) => {
+    if (document.querySelector(".overlay") || e.touches.length > 1) { tracking = false; return; }
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now();
+    tracking = !e.target.closest(".sched-wrap, input, .mapbox");
+  }, {passive: true});
+  swipeArea.addEventListener("touchend", (e) => {
+    if (!tracking) return; tracking = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4 && Date.now() - st < 900) go(dx < 0 ? 1 : -1);
+  }, {passive: true});
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest && e.target.closest("input")) return;
+    if (e.key === "ArrowRight") go(1); else if (e.key === "ArrowLeft") go(-1);
+  });
+  function swipeTip(){ if (store.swipeTip) return; store.swipeTip = true; save(); setTimeout(() => toast("화면을 옆으로 밀면 보관함과 키링·설정으로 넘어가요"), 1500); }
+
   /* ---------- 시작 ---------- */
   Promise.all([fetch("data/verses-365.json?v=20261125").then(r => r.json()), fetch("data/calendar.json?v=20261125").then(r => r.json())])
     .then(([d, c]) => {
@@ -566,6 +600,7 @@
       const tagged = location.hash === "#tag" || /[?&]tag\b/.test(location.search);
       if (tagged) { openToday(true); try { history.replaceState(null, "", location.pathname + location.search.replace(/[?&]tag\b[^&]*/, "")); } catch(e){} }
       else show("today");
+      swipeTip();
     })
     .catch(() => { $("card").innerHTML = `<div class="locked"><div><b>말씀을 불러오지 못했어요</b><p>인터넷 연결을 확인하고 다시 열어 주세요.</p></div></div>`; });
 })();
