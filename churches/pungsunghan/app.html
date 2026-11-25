@@ -21,9 +21,15 @@
   .sched thead th{font-size:11.5px;color:var(--sub);font-weight:700;padding-top:0}
   .sched tbody th{font-weight:700;white-space:nowrap}
   .sched td:nth-child(2){white-space:nowrap;font-variant-numeric:tabular-nums}
-  .sched td:last-child{color:var(--sub)}
+  .sched tbody th small{display:block;font-weight:400;font-size:12px;color:var(--sub);margin-top:2px}
+  .sched td{text-align:right}
+  .sched thead th:last-child{text-align:right}
   .sched tbody tr:last-child th,.sched tbody tr:last-child td{border-bottom:0}
-  .map{display:block;width:100%;height:auto;border-radius:12px;max-width:100%}
+  .addr{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14.5px;font-weight:700;margin-bottom:10px}
+  .addr button{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700}
+  .mapbox{position:relative;width:100%;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--sunk)}
+  .mapbox iframe{position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1}
+  .mapfallback{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;margin:0!important;font-size:13px;color:var(--sub)}
   .maplink{display:block;text-align:center;text-decoration:none;color:inherit}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -167,40 +173,36 @@
   </section>
 
   <section id="view-settings" hidden>
-    <h2>설정</h2><p class="lead">이 휴대폰에만 저장됩니다.</p>
-    <div class="group"><b>키링 대는 법</b>
-      <p style="margin-top:0">키링을 휴대폰 뒷면 위쪽(카메라 근처)에 1~2초 대 주세요. 오늘의 말씀이 열립니다.</p>
-      <p>안드로이드는 휴대폰 설정에서 NFC를 켜 주세요. 아이폰은 화면이 켜져 있으면 바로 됩니다.</p>
-    </div>
-    <div class="group"><b>보기 방식</b><div class="row2"><button class="opt" type="button" data-dual="0">한 언어</button><button class="opt" type="button" data-dual="1">두 언어 함께</button></div></div>
     <div id="churchArea">
-    <h2 style="margin-top:22px">교회 소식</h2><p class="lead">대한예수교장로회 풍성한교회</p>
+    <h2>교회 소식</h2><p class="lead">대한예수교장로회 풍성한교회</p>
     <div class="group"><b>예배 시간 안내</b>
       <div class="sched-wrap"><table class="sched">
-        <thead><tr><th scope="col">예배</th><th scope="col">시간</th><th scope="col">장소</th></tr></thead>
+        <thead><tr><th scope="col">예배 · 장소</th><th scope="col">시간</th></tr></thead>
         <tbody>
-        <tr><th scope="row">주일예배 1부</th><td>오전 9:00</td><td>사랑예배실(2층)</td></tr>
-        <tr><th scope="row">주일예배 2부</th><td>오전 11:00</td><td>사랑예배실(2층)</td></tr>
-        <tr><th scope="row">주일 오후예배</th><td>오후 1:30</td><td>사랑예배실(2층)</td></tr>
-        <tr><th scope="row">새벽기도회</th><td>오전 5:30</td><td>중고등부실(1층)</td></tr>
-        <tr><th scope="row">화요 중보기도회</th><td>오후 8:00</td><td>중고등부실(1층)</td></tr>
-        <tr><th scope="row">수요예배</th><td>오후 7:30</td><td>사랑예배실(2층)</td></tr>
-        <tr><th scope="row">금요 철야예배</th><td>오후 8:00</td><td>사랑예배실(2층)</td></tr>
-        <tr><th scope="row">주일학교</th><td>주일 오전 11:00</td><td>주일학교실(1층)</td></tr>
-        <tr><th scope="row">중고등부</th><td>주일 오전 11:00</td><td>중고등부실(1층)</td></tr>
-        <tr><th scope="row">대학·청년부</th><td>주일 오후 12:30</td><td>청년부실(1층)</td></tr>
+        <tr><th scope="row">주일예배 1부<small>사랑예배실(2층)</small></th><td>오전 9:00</td></tr>
+        <tr><th scope="row">주일예배 2부<small>사랑예배실(2층)</small></th><td>오전 11:00</td></tr>
+        <tr><th scope="row">주일 오후예배<small>사랑예배실(2층)</small></th><td>오후 1:30</td></tr>
+        <tr><th scope="row">새벽기도회<small>중고등부실(1층)</small></th><td>오전 5:30</td></tr>
+        <tr><th scope="row">화요 중보기도회<small>중고등부실(1층)</small></th><td>오후 8:00</td></tr>
+        <tr><th scope="row">수요예배<small>사랑예배실(2층)</small></th><td>오후 7:30</td></tr>
+        <tr><th scope="row">금요 철야예배<small>사랑예배실(2층)</small></th><td>오후 8:00</td></tr>
+        <tr><th scope="row">주일학교<small>주일학교실(1층)</small></th><td>주일 오전 11:00</td></tr>
+        <tr><th scope="row">중고등부<small>중고등부실(1층)</small></th><td>주일 오전 11:00</td></tr>
+        <tr><th scope="row">대학·청년부<small>청년부실(1층)</small></th><td>주일 오후 12:30</td></tr>
         </tbody></table></div>
     </div>
     <div class="group"><b>찾아오시는 길</b>
-      <img class="map" src="img/map.webp" alt="풍성한교회 약도: 하남풍산역과 하남시청역 사이, 코스트코 옆" width="700" height="1016">
-      <p>하남풍산역과 하남시청역 사이, 코스트코 옆에 있어요.</p>
+      <div class="addr"><span id="addrText">경기도 하남시 덕풍북로6번길 9-13</span><button type="button" id="addrCopy">주소 복사</button></div>
+      <div class="mapbox"><iframe src="https://maps.google.com/maps?q=%EA%B2%BD%EA%B8%B0%EB%8F%84%20%ED%95%98%EB%82%A8%EC%8B%9C%20%EB%8D%95%ED%92%8D%EB%B6%81%EB%A1%9C6%EB%B2%88%EA%B8%B8%209-13&amp;z=16&amp;hl=ko&amp;output=embed" title="풍성한교회 위치 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <p class="mapfallback">지도가 보이지 않으면 아래 버튼으로 지도 앱에서 열어 주세요.</p></div>
       <div class="row2" style="margin-top:10px">
-        <a class="opt maplink" href="https://map.naver.com/p/search/%ED%95%98%EB%82%A8%20%ED%92%8D%EC%84%B1%ED%95%9C%EA%B5%90%ED%9A%8C" target="_blank" rel="noopener">네이버 지도로 보기</a>
-        <a class="opt maplink" href="https://map.kakao.com/?q=%ED%95%98%EB%82%A8%20%ED%92%8D%EC%84%B1%ED%95%9C%EA%B5%90%ED%9A%8C" target="_blank" rel="noopener">카카오맵으로 보기</a>
+        <a class="opt maplink" href="https://map.naver.com/p/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%ED%95%98%EB%82%A8%EC%8B%9C%20%EB%8D%95%ED%92%8D%EB%B6%81%EB%A1%9C6%EB%B2%88%EA%B8%B8%209-13" target="_blank" rel="noopener">네이버 지도</a>
+        <a class="opt maplink" href="https://map.kakao.com/link/search/%EA%B2%BD%EA%B8%B0%EB%8F%84%20%ED%95%98%EB%82%A8%EC%8B%9C%20%EB%8D%95%ED%92%8D%EB%B6%81%EB%A1%9C6%EB%B2%88%EA%B8%B8%209-13" target="_blank" rel="noopener">카카오맵</a>
       </div>
     </div>
     </div>
     <div id="adminArea" hidden>
+    <h2>관리자</h2><p class="lead">로고를 5번 눌러 켠 관리자 화면이에요.</p>
     <div class="group"><b>관리자 · 키링 시험</b>
       <button class="btn" id="tapBtn" type="button" style="width:100%">키링을 댄 것처럼 오늘 카드 열기</button>
       <p>NFC 키링에는 이 페이지 주소 끝에 <code>?tag=1</code>을 붙여 저장하면, 대는 순간 카드가 열립니다.</p>
@@ -227,7 +229,7 @@
 <nav class="tabbar" aria-label="메뉴"><div>
   <button type="button" data-view="today" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6"/></svg>오늘</button>
   <button type="button" data-view="box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>보관함</button>
-  <button type="button" data-view="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 8a6 6 0 0 1 0 8M11 5.5a10 10 0 0 1 0 13M15 3a14 14 0 0 1 0 18"/></svg>키링·설정</button>
+  <button type="button" data-view="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2.5v4M10 4.5h4"/><path d="M5 21V11l7-4.5 7 4.5v10"/><path d="M10 21v-5h4v5"/><path d="M3 21h18"/></svg>교회소식</button>
 </div></nav>
 </div>
 
@@ -523,10 +525,15 @@
   });
   function setAdmin(on){
     store.admin = on; save(); if (!on) previewDate = null;
-    toast(on ? "관리자 모드를 켰어요 · 설정에서 날짜 미리보기를 쓸 수 있어요" : "관리자 모드를 껐어요");
+    toast(on ? "관리자 모드를 켰어요 · 교회소식 탭에서 관리자 메뉴를 쓸 수 있어요" : "관리자 모드를 껐어요");
     show(view === "settings" ? "settings" : "today");
   }
   $("adminOff").onclick = () => setAdmin(false);
+  $("addrCopy").onclick = () => {
+    const t = $("addrText").textContent;
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($("addrText")); const g = getSelection(); g.removeAllRanges(); g.addRange(r); toast("주소를 선택했어요. 길게 눌러 복사하세요"); };
+    try { navigator.clipboard.writeText(t).then(() => toast("주소를 복사했어요"), fallback); } catch (e) { fallback(); }
+  };
   $("previewReset").onclick = () => { previewDate = null; render(); };
   $("dateInput").onchange = (e) => { if (e.target.value) { previewDate = fromIso(e.target.value); show("today"); } };
   let resetArmed = false;
