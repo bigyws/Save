@@ -12,3 +12,10 @@
 관리자 모드가 꺼져 있을 때 설정 화면 아래에 보이고, 관리자 모드에서는 숨겨집니다.
 - 예배 시간 안내: `app.html` / `index.html` 의 `<table class="sched">` 안 줄을 고칩니다.
 - 찾아오시는 길: `img/map.webp` (교회 소식지 약도), 네이버 지도·카카오맵 검색 링크
+
+## NFC 키링
+
+- 키링에 넣을 주소: `https://bigyws.github.io/Save/churches/pungsunghan/?tag=1`
+- 시안: `keyring/keyring-designs.png` (A 원형 50mm, B 카드형 40×60mm), 원본 `keyring/designs.html`
+- 칩: NTAG213 (주소 길이 약 55자, 용량 충분)
+- 주의: 키링을 나눠 준 뒤에는 저장소 이름(Save)과 폴더 이름(churches/pungsunghan)을 바꾸면 안 됩니다. 바꾸면 키링이 열리지 않습니다.
