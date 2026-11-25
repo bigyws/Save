@@ -26,6 +26,16 @@
     --bg:#16181D; --surface:#1F2229; --sunk:#2A2E37; --line:#323743;
     --ink:#ECE8E1; --sub:#A3A7B0; --accent:#E1C08A; --gold:#E7C784; --dark:#ECE8E1; --on-dark:#16181D; color-scheme:dark }
   [hidden]{display:none!important}
+  .sched-wrap{overflow-x:auto}
+  .sched{width:100%;border-collapse:collapse;font-size:13px}
+  .sched th,.sched td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  .sched thead th{font-size:11.5px;color:var(--sub);font-weight:700;padding-top:0}
+  .sched tbody th{font-weight:700;white-space:nowrap}
+  .sched td:nth-child(2){white-space:nowrap;font-variant-numeric:tabular-nums}
+  .sched td:last-child{color:var(--sub)}
+  .sched tbody tr:last-child th,.sched tbody tr:last-child td{border-bottom:0}
+  .map{display:block;width:100%;height:auto;border-radius:12px;max-width:100%}
+  .maplink{display:block;text-align:center;text-decoration:none;color:inherit}
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
   *{box-sizing:border-box}
@@ -174,6 +184,33 @@
       <p>안드로이드는 휴대폰 설정에서 NFC를 켜 주세요. 아이폰은 화면이 켜져 있으면 바로 됩니다.</p>
     </div>
     <div class="group"><b>보기 방식</b><div class="row2"><button class="opt" type="button" data-dual="0">한 언어</button><button class="opt" type="button" data-dual="1">두 언어 함께</button></div></div>
+    <div id="churchArea">
+    <h2 style="margin-top:22px">교회 소식</h2><p class="lead">대한예수교장로회 풍성한교회</p>
+    <div class="group"><b>예배 시간 안내</b>
+      <div class="sched-wrap"><table class="sched">
+        <thead><tr><th scope="col">예배</th><th scope="col">시간</th><th scope="col">장소</th></tr></thead>
+        <tbody>
+        <tr><th scope="row">주일예배 1부</th><td>오전 9:00</td><td>사랑예배실(2층)</td></tr>
+        <tr><th scope="row">주일예배 2부</th><td>오전 11:00</td><td>사랑예배실(2층)</td></tr>
+        <tr><th scope="row">주일 오후예배</th><td>오후 1:30</td><td>사랑예배실(2층)</td></tr>
+        <tr><th scope="row">새벽기도회</th><td>오전 5:30</td><td>중고등부실(1층)</td></tr>
+        <tr><th scope="row">화요 중보기도회</th><td>오후 8:00</td><td>중고등부실(1층)</td></tr>
+        <tr><th scope="row">수요예배</th><td>오후 7:30</td><td>사랑예배실(2층)</td></tr>
+        <tr><th scope="row">금요 철야예배</th><td>오후 8:00</td><td>사랑예배실(2층)</td></tr>
+        <tr><th scope="row">주일학교</th><td>주일 오전 11:00</td><td>주일학교실(1층)</td></tr>
+        <tr><th scope="row">중고등부</th><td>주일 오전 11:00</td><td>중고등부실(1층)</td></tr>
+        <tr><th scope="row">대학·청년부</th><td>주일 오후 12:30</td><td>청년부실(1층)</td></tr>
+        </tbody></table></div>
+    </div>
+    <div class="group"><b>찾아오시는 길</b>
+      <img class="map" src="img/map.webp" alt="풍성한교회 약도: 하남풍산역과 하남시청역 사이, 코스트코 옆" width="700" height="1016">
+      <p>하남풍산역과 하남시청역 사이, 코스트코 옆에 있어요.</p>
+      <div class="row2" style="margin-top:10px">
+        <a class="opt maplink" href="https://map.naver.com/p/search/%ED%95%98%EB%82%A8%20%ED%92%8D%EC%84%B1%ED%95%9C%EA%B5%90%ED%9A%8C" target="_blank" rel="noopener">네이버 지도로 보기</a>
+        <a class="opt maplink" href="https://map.kakao.com/?q=%ED%95%98%EB%82%A8%20%ED%92%8D%EC%84%B1%ED%95%9C%EA%B5%90%ED%9A%8C" target="_blank" rel="noopener">카카오맵으로 보기</a>
+      </div>
+    </div>
+    </div>
     <div id="adminArea" hidden>
     <div class="group"><b>관리자 · 키링 시험</b>
       <button class="btn" id="tapBtn" type="button" style="width:100%">키링을 댄 것처럼 오늘 카드 열기</button>
@@ -341,7 +378,7 @@
     document.querySelectorAll(".tabbar button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     if (v === "today") render(); else stopSpeak();
     if (v === "box") renderBox();
-    if (v === "settings") { $("adminArea").hidden = !store.admin; $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
+    if (v === "settings") { $("adminArea").hidden = !store.admin; $("churchArea").hidden = !!store.admin; $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
     window.scrollTo(0, 0);
   }
 
