@@ -47,7 +47,7 @@
   }
   #view-box,#view-settings{overflow-y:auto;-webkit-overflow-scrolling:touch}
   .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .brand{display:flex;align-items:center;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px;cursor:default;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
   .logo-img{display:block;height:46px;width:auto;max-width:62vw}
   .logo-img.on-dark{display:none}
   @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .logo-img.on-light{display:none} :root:not([data-theme="light"]) .logo-img.on-dark{display:block} }
@@ -168,13 +168,18 @@
   </section>
 
   <section id="view-settings" hidden>
-    <h2>설정</h2><p class="lead">시험용 앱이에요. 이 휴대폰에만 저장됩니다.</p>
-    <div class="group"><b>키링 대기</b>
-      <button class="btn" id="tapBtn" type="button" style="width:100%">키링을 댄 것처럼 오늘 카드 열기</button>
-      <p>NFC 키링에는 이 페이지 주소 끝에 <code>#tag</code>를 붙여 저장하면, 대는 순간 카드가 열립니다.</p>
+    <h2>설정</h2><p class="lead">이 휴대폰에만 저장됩니다.</p>
+    <div class="group"><b>키링 대는 법</b>
+      <p style="margin-top:0">키링을 휴대폰 뒷면 위쪽(카메라 근처)에 1~2초 대 주세요. 오늘의 말씀이 열립니다.</p>
+      <p>안드로이드는 휴대폰 설정에서 NFC를 켜 주세요. 아이폰은 화면이 켜져 있으면 바로 됩니다.</p>
     </div>
     <div class="group"><b>보기 방식</b><div class="row2"><button class="opt" type="button" data-dual="0">한 언어</button><button class="opt" type="button" data-dual="1">두 언어 함께</button></div></div>
-    <div class="group"><b>날짜 바꿔 미리보기</b>
+    <div id="adminArea" hidden>
+    <div class="group"><b>관리자 · 키링 시험</b>
+      <button class="btn" id="tapBtn" type="button" style="width:100%">키링을 댄 것처럼 오늘 카드 열기</button>
+      <p>NFC 키링에는 이 페이지 주소 끝에 <code>?tag=1</code>을 붙여 저장하면, 대는 순간 카드가 열립니다.</p>
+    </div>
+    <div class="group"><b>관리자 · 날짜 바꿔 미리보기</b>
       <label for="dateInput" class="lead" style="display:block;margin:0 0 8px">다른 날 나올 카드를 미리 봅니다 (보관함에는 넣지 않아요)</label>
       <input type="date" id="dateInput" min="2026-01-01" max="2035-12-31">
       <div class="row2" style="margin-top:8px">
@@ -183,9 +188,12 @@
         <button class="opt" type="button" data-jump="2028-02-29">윤년 2/29</button>
       </div>
     </div>
-    <div class="group"><b>처음부터 다시</b>
+    <div class="group"><b>관리자 · 처음부터 다시</b>
       <button class="btn ghost" id="resetBtn" type="button" style="width:100%">보관함과 기록 지우기</button>
       <p id="resetNote">지우면 다음에 키링을 댈 때 첫 만남 카드가 다시 나와요.</p>
+    </div>
+    <div class="group"><button class="btn ghost" id="adminOff" type="button" style="width:100%">관리자 모드 끄기</button>
+      <p>교회 로고를 5번 연속 누르면 다시 켜집니다.</p></div>
     </div>
   </section>
 </div>
@@ -213,7 +221,7 @@
   let DATA = null, CAL = null, current = null, view = "today", previewDate = null;
   let speaking = false, timer = null, startAt = 0, estMs = 0, boundary = -1;
 
-  function load(){ try { return Object.assign({lang:"ko", dual:false, rate:1, first:null, opened:{}, calib:{}}, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){ return {lang:"ko", dual:false, rate:1, first:null, opened:{}}; } }
+  function load(){ try { return Object.assign({lang:"ko", dual:false, rate:1, first:null, opened:{}, calib:{}, admin:false}, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e){ return {lang:"ko", dual:false, rate:1, first:null, opened:{}}; } }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e){} }
   const pad = (n) => String(n).padStart(2,"0");
   const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -288,7 +296,7 @@
       ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${chunkHtml(c[subLang], subLang)}</div>` : ""}
       <div class="ref">${esc(ref)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${esc(refWithVersion(c, subLang))}</div>` : ""}</div>` : ""}
       ${opened ? "" : `<div class="locked"><div><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
-        <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요<br>키링이 없으면 아래 버튼으로 열 수 있어요</p><button class="btn" type="button" id="unlockBtn">키링 없이 열어 보기</button></div></div>`}`;
+        <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요</p>${store.admin ? `<button class="btn" type="button" id="unlockBtn">관리자 · 키링 없이 열기</button>` : ""}</div></div>`}`;
     const ub = $("unlockBtn"); if (ub) ub.onclick = () => openToday(false);
     document.querySelector(".player").style.setProperty("--c", color(c));
     $("playBtn").disabled = !opened;
@@ -333,7 +341,7 @@
     document.querySelectorAll(".tabbar button").forEach(b => { if (b.dataset.view === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
     if (v === "today") render(); else stopSpeak();
     if (v === "box") renderBox();
-    if (v === "settings") { $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
+    if (v === "settings") { $("adminArea").hidden = !store.admin; $("dateInput").value = iso(previewDate || new Date()); document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual))); }
     window.scrollTo(0, 0);
   }
 
@@ -481,6 +489,18 @@
     try { navigator.clipboard.writeText(t).then(() => toast("말씀을 복사했어요"), fallback); } catch(err){ fallback(); }
   };
   $("tapBtn").onclick = () => openToday(true);
+  // 관리자 모드: 교회 로고를 2초 안에 5번 누르면 켜고 끕니다.
+  let taps = 0, tapTimer = 0;
+  document.querySelector(".brand").addEventListener("click", () => {
+    taps++; clearTimeout(tapTimer); tapTimer = setTimeout(() => { taps = 0; }, 2000);
+    if (taps >= 5) { taps = 0; setAdmin(!store.admin); }
+  });
+  function setAdmin(on){
+    store.admin = on; save(); if (!on) previewDate = null;
+    toast(on ? "관리자 모드를 켰어요 · 설정에서 날짜 미리보기를 쓸 수 있어요" : "관리자 모드를 껐어요");
+    show(view === "settings" ? "settings" : "today");
+  }
+  $("adminOff").onclick = () => setAdmin(false);
   $("previewReset").onclick = () => { previewDate = null; render(); };
   $("dateInput").onchange = (e) => { if (e.target.value) { previewDate = fromIso(e.target.value); show("today"); } };
   let resetArmed = false;
