@@ -127,7 +127,9 @@
   .app > section.in-r{animation:inR .28s ease-out}
   .app > section.in-l{animation:inL .28s ease-out}
   @media (prefers-reduced-motion:reduce){ .app > section.in-r,.app > section.in-l{animation:none} }
-  .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--sunk);color:var(--ink);display:grid;place-items:center;flex:none}
+  .tel{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:700;color:var(--ink);text-decoration:none;margin-bottom:8px}
+  .tel svg{color:var(--accent)}
+  .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:var(--sunk);color:var(--ink);display:grid;place-items:center;flex:none;text-decoration:none}
   .wave{display:flex;gap:2.5px;align-items:center;height:26px;margin-top:6px}
   .wave i{flex:1;max-width:4px;border-radius:2px;background:var(--line);transition:background .15s}
   .wave i.on{background:var(--c,#4E8B5C)}
@@ -191,7 +193,7 @@
 <div class="app">
   <div class="top">
     <div class="brand"><img class="logo-img on-light" src="img/logo.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"><img class="logo-img on-dark" src="img/logo-dark.png" alt="대한예수교장로회 풍성한교회" width="646" height="204"></div>
-    <button class="iconbtn" type="button" data-view="box" aria-label="말씀 보관함"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M12 7v6M9 10h6"/></svg></button>
+    <a class="iconbtn" href="tel:031-796-6776" aria-label="풍성한교회 대표 전화 031-796-6776 걸기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></a>
   </div>
   <div class="preview" id="previewBar" hidden><span id="previewText"></span><button id="previewReset" type="button">오늘로</button></div>
 
@@ -241,6 +243,7 @@
         </tbody></table></div>
     </div>
     <div class="group"><b>찾아오시는 길</b>
+      <a class="tel" href="tel:031-796-6776"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg><span>대표 전화 031-796-6776</span></a>
       <div class="addr"><span id="addrText">경기도 하남시 덕풍북로6번길 9-13</span><button type="button" id="addrCopy">주소 복사</button></div>
       <div class="mapbox"><iframe src="https://maps.google.com/maps?q=%ED%92%8D%EC%84%B1%ED%95%9C%EA%B5%90%ED%9A%8C%20%EA%B2%BD%EA%B8%B0%EB%8F%84%20%ED%95%98%EB%82%A8%EC%8B%9C%20%EB%8D%95%ED%92%8D%EB%B6%81%EB%A1%9C6%EB%B2%88%EA%B8%B8%209-13&amp;z=17&amp;hl=ko&amp;output=embed" title="풍성한교회 위치 지도" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         <p class="mapfallback">지도가 보이지 않으면 아래 버튼으로 지도 앱에서 열어 주세요.</p></div>
