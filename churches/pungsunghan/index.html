@@ -149,6 +149,11 @@
   .days i.td{border:1.5px solid var(--hi);color:var(--hi)}
   .langbox{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 14px 12px}
   .langbox > b{display:block;font-size:12px;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
+  .vtext .refrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+  .vtext .refrow .ref{margin-top:0}
+  .pill{display:flex;flex:none;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:2px;backdrop-filter:blur(6px)}
+  .pill button{border:0;background:none;font-size:11px;font-weight:700;color:#fff;opacity:.8;padding:5px 10px;border-radius:99px;white-space:nowrap}
+  .pill button[aria-pressed="true"]{background:#fff;color:#23262E;opacity:1}
   .seg.langtoday{flex:none;margin:10px 0 0}
   .boxacts{padding:0 2px 2px;gap:26px;font-size:14px}
   .mini .kept{position:absolute;top:8px;right:8px;color:#fff;opacity:.9}
@@ -371,7 +376,8 @@
       ${opened ? `<div class="chips"><span>${esc(chipLeft)}</span><span>${esc(c.key ? "특별 카드" : c.theme)}</span></div>
       <div class="vtext"><q class="${L}${long || store.dual ? " long" : ""}" id="verseQ">${chunkHtml(text, L)}</q>
       ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${chunkHtml(c[subLang], subLang)}</div>` : ""}
-      <div class="ref">${esc(ref)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${esc(refWithVersion(c, subLang))}</div>` : ""}</div>` : ""}
+      <div class="refrow"><div><div class="ref">${esc(ref)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${esc(refWithVersion(c, subLang))}</div>` : ""}</div>
+      <div class="pill" role="group" aria-label="보기 방식"><button type="button" data-dual="0" aria-pressed="${!store.dual}">한 언어</button><button type="button" data-dual="1" aria-pressed="${store.dual}">두 언어</button></div></div></div>` : ""}
       ${opened ? "" : `<div class="locked"><div><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
         <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요</p>${store.admin ? `<button class="btn" type="button" id="unlockBtn">관리자 · 키링 없이 열기</button>` : ""}</div></div>`}`;
     const ub = $("unlockBtn"); if (ub) ub.onclick = () => openToday(false);
