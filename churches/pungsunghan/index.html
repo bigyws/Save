@@ -208,6 +208,8 @@
   .welcome .card{flex:none;border-radius:0;box-shadow:none;aspect-ratio:3/3.4}
   .welcome .body{padding:16px 18px 18px;text-align:center}
   .welcome .body b{font-size:17px}
+  .welcome .body .wname{display:block;font-size:22px;font-weight:900;color:#2E9B55;letter-spacing:-.5px}
+  .welcome .body .wbless{font-size:15px;color:var(--ink);font-weight:500;margin:4px 0 14px}
   .welcome .body p{font-size:13px;color:var(--sub);margin:6px 0 14px}
   .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);background:#23262E;color:#fff;border-radius:14px;padding:11px 16px;font-size:13.5px;z-index:40;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
   @media (prefers-reduced-motion:reduce){ .bar i,.vtext .c{transition:none} }
@@ -361,7 +363,7 @@
     o.innerHTML = `<div class="welcome" role="dialog" aria-label="첫 만남 카드"><div class="card">${MalsseumArt.artFor(w,"wl")}<div class="shade"></div>
       <div class="chips"><span>첫 만남</span><span>축복</span></div>
       <div class="vtext"><q class="long">${esc(w[store.lang] || w.ko)}</q><div class="ref">${esc(refWithVersion(w, store.lang))}</div></div></div>
-      <div class="body"><img src="img/emblem.png" alt="" width="60" height="60" style="display:block;margin:0 auto 6px"><b>풍성한교회 말씀 키링에 오신 것을 환영합니다</b><p>오늘부터 하루 한 구절, 말씀 카드가 열려요.</p><button class="btn" type="button" style="width:100%">오늘의 말씀 보기</button></div></div>`;
+      <div class="body"><img src="img/emblem.png" alt="" width="60" height="60" style="display:block;margin:0 auto 6px"><b class="wname">풍성한교회</b><p class="wbless">환영하고 축복합니다.</p><button class="btn" type="button" style="width:100%">오늘의 말씀 보기</button></div></div>`;
     o.querySelector("button").onclick = () => o.remove();
     document.body.appendChild(o); MalsseumArt.fitLand(o.querySelector(".card")); o.querySelector("button").focus();
   }
