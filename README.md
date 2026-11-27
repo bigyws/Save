@@ -1,24 +1,15 @@
 # Save
 
-## 두더지 잡기 (`whack-a-mole/`)
+## 말씀 키링
 
-브라우저에서 바로 실행되는 두더지 잡기 게임입니다. 설치할 것 없이 `whack-a-mole/index.html` 파일을 브라우저로 열면 됩니다.
+NFC 키링을 휴대폰에 대면 하루 한 구절 말씀 카드가 열리는 앱입니다 (한국어·English·日本語·中文, 읽어주기, 보관함, 교회소식).
 
-- 30초 동안 구멍에서 나오는 두더지를 클릭(또는 터치)해서 잡습니다.
-- 두더지 +10점, 황금 두더지 +30점, 고슴도치를 치면 −20점입니다.
-- 연속 5마리부터 점수 2배, 10마리부터 3배입니다. 놓치면 콤보가 끊깁니다.
-- 키보드: 숫자 키패드 `7 8 9 / 4 5 6 / 1 2 3` 또는 `Q W E / A S D / Z X C`
-- 최고 기록은 브라우저에 저장됩니다.
+| 폴더 | 내용 | 주소 |
+|---|---|---|
+| `bible-keyring-original/` | **원본** (다른 교회용으로 복사하는 틀) | https://bigyws.github.io/Save/bible-keyring-original/ |
+| `churches/pungsunghan/` | 풍성한교회용 | https://bigyws.github.io/Save/churches/pungsunghan/ |
+| `bible-keyring/` | 작업용 복사본, 말씀 데이터 만드는 도구 | https://bigyws.github.io/Save/bible-keyring/ |
 
-## 콕태그 NFC 추억 키링 (`nfc-keyring/`)
-
-강아지·고양이 NFC 키링 디자인, 판매 페이지(웹 스타일), 추억 앨범, 앱 스타일 버전입니다. 자세한 내용은 [`nfc-keyring/README.md`](nfc-keyring/README.md)를 보세요.
-
-## 말씀 키링 (`bible-keyring/`, `bible-keyring-original/`)
-
-- `bible-keyring-original/`: **원본. 고치지 않습니다.** 새 교회용·새 버전은 이 폴더를 복사해서 만듭니다.
-  주소: https://bigyws.github.io/Save/bible-keyring-original/
-- `bible-keyring/`: 작업용 복사본 (앞으로의 수정은 여기서)
-  주소: https://bigyws.github.io/Save/bible-keyring/
-- `churches/pungsunghan/`: 풍성한교회용 (원본 복사 + 로고·이름)
-  주소: https://bigyws.github.io/Save/churches/pungsunghan/
+- 풍성한교회 NFC 키링에 넣을 주소: `https://bigyws.github.io/Save/churches/pungsunghan/?tag=1`
+- 키링을 나눠 준 뒤에는 저장소 이름(Save)과 폴더 이름을 바꾸지 마세요. 바꾸면 키링이 열리지 않습니다.
+- 키링 인쇄 파일: `churches/pungsunghan/keyring/`
