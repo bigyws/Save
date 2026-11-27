@@ -168,7 +168,10 @@
   #view-box .langbox{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 14px}
   #view-box .langbox > b{margin:0}
   #view-box .boxacts{padding:0;gap:20px}
-  #view-box .grid{margin-top:10px}
+  #view-box{display:flex;flex-direction:column}
+  #view-box > *{flex:none}
+  #view-box .grid{margin-top:10px;flex:1 0 auto;grid-auto-rows:minmax(150px,1fr)}
+  #view-box .mini{aspect-ratio:auto;height:auto;min-height:150px}
   .seg.langtoday{flex:none;margin:10px 0 0}
   .boxacts{padding:0 2px 2px;gap:26px;font-size:14px}
   .mini .kept{position:absolute;top:8px;right:8px;color:#fff;opacity:.9}
