@@ -195,13 +195,15 @@
   .tabbar div{display:flex;max-width:460px;width:100%}
   .tabbar button{flex:1;border:0;background:none;padding:8px 0 10px;font-size:11px;color:var(--sub);display:grid;justify-items:center;gap:3px}
   .tabbar button[aria-current="page"]{color:var(--ink);font-weight:800}
-  .overlay{position:fixed;inset:0;background:rgba(10,12,18,.6);display:grid;place-items:center;z-index:30;padding:20px max(16px,env(safe-area-inset-left,0px))}
-  .welcome{width:min(400px,100%);background:var(--surface);border-radius:26px;overflow:hidden}
-  .welcome .card{flex:none;border-radius:0;box-shadow:none;aspect-ratio:3/2.85}
-  .welcome .vtext q.long{font-size:clamp(14px,4vw,17px)}
+  .overlay{position:fixed;inset:0;background:rgba(10,12,18,.6);display:grid;place-items:center;z-index:30;padding:calc(12px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-left,0px)) calc(12px + env(safe-area-inset-bottom,0px))}
+  .welcome{width:min(440px,100%);background:var(--surface);border-radius:26px;overflow:hidden}
+  .welcome .card{flex:1 1 auto;border-radius:0;box-shadow:none;aspect-ratio:auto;min-height:260px}
+  .welcome .vtext q.long{font-size:clamp(15px,4.3vw,18px)}
+  .welcome{display:flex;flex-direction:column;height:min(100%,800px)}
+  .welcome .body{flex:none}
   .overlay{overflow-y:auto}
   .welcome svg.bg g[style*="drop-shadow"]{transform:translate(0,-62px)}
-  .welcome .body{padding:16px 18px 18px;text-align:center}
+  .welcome .body{padding:12px 18px 16px;text-align:center}
   .welcome .body b{font-size:17px}
   .welcome .body .wsub{display:block;font-size:12px;color:var(--sub);letter-spacing:1px}
   .welcome .body .wname{display:block;font-size:30px;font-weight:900;color:#2E9B55;letter-spacing:-1px;line-height:1.2}
