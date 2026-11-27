@@ -157,10 +157,15 @@
   #view-box .langbox{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 14px}
   #view-box .langbox > b{margin:0}
   #view-box .boxacts{padding:0;gap:20px}
-  #view-box{display:flex;flex-direction:column}
+  /* 보관함은 항상 한 화면에 꽉 차게: 카드 2줄이 남은 높이를 나눠 가짐 */
+  #view-box{display:flex;flex-direction:column;overflow:hidden}
   #view-box > *{flex:none}
-  #view-box .grid{margin-top:10px;flex:1 0 auto;grid-auto-rows:minmax(150px,1fr)}
-  #view-box .mini{aspect-ratio:auto;height:auto;min-height:150px}
+  #view-box .lead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  #view-box .allbtn{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--accent)}
+  #view-box .grid{margin-top:10px;flex:1 1 0;min-height:0;grid-template-rows:repeat(2,minmax(0,1fr))}
+  #view-box .mini{aspect-ratio:auto;height:auto;min-height:0}
+  #view-box.all{overflow-y:auto}
+  #view-box.all .grid{flex:none;grid-template-rows:none;grid-auto-rows:170px}
   .seg.langtoday{flex:none;margin:10px 0 0}
   .boxacts{padding:0 2px 2px;gap:26px;font-size:14px}
   .mini .kept{position:absolute;top:8px;right:8px;color:#fff;opacity:.9}
@@ -231,7 +236,7 @@
   </section>
 
   <section id="view-box" hidden>
-    <h2>말씀 보관함</h2><p class="lead">키링으로 받은 말씀 카드가 모여요</p>
+    <h2>말씀 보관함</h2><p class="lead"><span>키링으로 받은 말씀 카드가 모여요</span><button type="button" id="boxAll" class="allbtn" hidden></button></p>
     <div class="week"><div class="wtop"><b id="boxStreak"></b><span id="boxWeek"></span></div><div class="days" id="boxDays"></div></div>
     <div class="langbox"><b>오늘 말씀</b>
       <div class="actions boxacts">
@@ -424,6 +429,7 @@
   function fitArt(){ fitText(); if (window.MalsseumArt.fitLand) MalsseumArt.fitLand($("card")); }
 
   const ORD = ["첫째","둘째","셋째","넷째","다섯째"];
+  let boxAll = false;
   const CHECK = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>`;
   const LOCK = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>`;
   function renderBox(){
@@ -438,11 +444,17 @@
     }
     $("boxDays").innerHTML = days;
     document.querySelectorAll("[data-dual]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.dual === "1") === store.dual)));
-    const cards = keys.map((d, i) => { const c = findCard(store.opened[d]); if (!c) return "";
+    const showAll = boxAll && keys.length > 5, from = showAll ? 0 : Math.max(0, keys.length - 5);
+    $("view-box").classList.toggle("all", showAll);
+    $("boxAll").hidden = keys.length <= 5;
+    $("boxAll").textContent = showAll ? "최근만 보기" : `모두 보기 (${keys.length}장)`;
+    const cards = keys.map((d, i) => { if (i < from) return null; const c = findCard(store.opened[d]); if (!c) return "";
       return `<button type="button" class="mini" data-date="${d}">${MalsseumArt.artFor(c, "m" + i)}<div class="sh"></div>${store.kept[d] ? `<svg class="kept" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v18l-6-4-6 4z"/></svg>` : ""}<span><small>DAY ${i + 1}</small>${esc(c["ref_" + store.lang] || c.ref_ko)}</span></button>`; });
+    for (let k = cards.length - 1; k >= 0; k--) if (cards[k] === null) cards.splice(k, 1);
     const nd = store.opened[todayKey] ? new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1) : t;
     cards.push(`<div class="mini lock next"><div>${LOCK}<br><b>${store.opened[todayKey] ? "내일 열려요" : "키링을 대면 열려요"}</b><br><span>${nd.getMonth() + 1}월 ${nd.getDate()}일</span></div></div>`);
     while (cards.length % 3 || cards.length < 6) cards.push(`<div class="mini lock">${LOCK}</div>`);
+    if (!showAll) cards.length = 6;
     $("boxGrid").innerHTML = cards.join("");
   }
 
@@ -609,6 +621,7 @@
     try { navigator.clipboard.writeText(t).then(() => toast("말씀을 복사했어요 · 붙여넣기로 보내 주세요"), fallback); } catch(err){ fallback(); }
   };
   $("tapBtn").onclick = () => openToday(true);
+  $("boxAll").onclick = () => { boxAll = !boxAll; renderBox(); $("view-box").scrollTo(0, 0); };
   // 관리자 모드: 교회 로고를 2초 안에 5번 누르면 켜고 끕니다.
   let taps = 0, tapTimer = 0;
   document.querySelector(".brand").addEventListener("click", () => {
