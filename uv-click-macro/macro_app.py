@@ -44,13 +44,14 @@ from pynput import keyboard, mouse
 pyautogui.FAILSAFE = True   # 마우스를 왼쪽 위 구석으로 → 비상정지
 pyautogui.PAUSE = 0.03
 
-VERSION = "v.27"
+VERSION = "v.28"
 CREDIT = f"made by. 양원식 {VERSION}"
 APP_TITLE = f"UV 인쇄 클릭 자동화 [{CREDIT}]"
 COMPANY = "신신기획"
 
 # 업그레이드 내역 (최신이 위) — 프로그램 맨 위 [made by. ...] 를 누르면 보입니다
 CHANGELOG = [
+    ("v.28", "11/27", "시작 확인 창 수정: 이번 실행 후 98% 이상이면 표시 (건너뛰는 경우 포함), 창이 안 보이거나 F9 가 안 먹던 문제 수정"),
     ("v.27", "11/23", "F9 실행 중에는 이 창을 맨 아래로 (끝나면 다시 앞으로)"),
     ("v.26", "11/23", "1회 시간 (F9 → END → 다음 F9) 표시, 납품수량 기준 예상 완료 시각"),
     ("v.25", "11/22", "작업 중 '한 번에 소재' 수량을 바꿔도 이미 센 총 소재 수량은 그대로"),
@@ -323,7 +324,7 @@ class StepDialog(tk.Toplevel):
 
 
 class StartConfirm(tk.Toplevel):
-    """납품수량 95% 이상일 때 F9 / 시작 누르면 먼저 뜨는 확인 창"""
+    """이번 실행 후 납품수량 98% 이상이 될 때 F9 / 시작 누르면 먼저 뜨는 확인 창"""
 
     def __init__(self, app):
         super().__init__(app.root)
@@ -331,7 +332,7 @@ class StartConfirm(tk.Toplevel):
         self.result = False
         self.title("시작 확인")
         self.resizable(False, False)
-        self.transient(app.root)
+        # transient 를 쓰지 않음: 메인 창이 내려가 있거나 최소화돼도 확인 창은 보이게
         self.attributes("-topmost", True)
         m = app.macro
         n = app._per_plate()
@@ -340,15 +341,16 @@ class StartConfirm(tk.Toplevel):
         tk.Label(frm, text="⚠ 자동 클릭을 시작할까요?", bg="#ffffff", fg="#b00020",
                  font=("맑은 고딕", 13, "bold")).pack(anchor="w")
         pct = int(app._total() * 100 / app.target) if app.target else 0
-        tk.Label(frm, text=f"납품수량의 {pct}% 를 채웠습니다. 남은 수량을 확인하세요.", bg="#ffffff", fg="#555",
+        tk.Label(frm, text=f"지금 납품수량의 {pct}% — 이번 실행으로 거의 채웁니다. 남은 수량을 확인하세요.",
+                 bg="#ffffff", fg="#555",
                  font=("맑은 고딕", 9)).pack(anchor="w", pady=(2, 8))
         info = tk.Frame(frm, bg="#f4f6fa", padx=12, pady=8)
         info.pack(fill="x")
         rows = [("작업", m["name"] or "(저장 안 됨)"),
                 ("반복", f'{m["repeat"]}회  (한 번에 소재 {n}장)'),
-                ("이번에 추가", f'{m["repeat"] * n:,}장' if any(is_end(s) for s in m["steps"])
+                ("이번에 추가", f'{app._expected_add():,}장' if any(is_end(s) for s in m["steps"])
                  else "END 없음 — 세지 않음"),
-                ("총 소재 수량", f"{app._total():,}장")]
+                ("총 소재 수량", f"{app._total():,}장  →  실행 후 {app._total() + app._expected_add():,}장")]
         if app.target:
             rows.append(("납품수량", f"{app.target:,}장"))
         for r, (k, v) in enumerate(rows):
@@ -389,8 +391,20 @@ class StartConfirm(tk.Toplevel):
             self.bell()
         except tk.TclError:
             pass
-        self.grab_set()
+        self.lift()
+        try:
+            self.grab_set()
+        except tk.TclError:
+            pass
         self.focus_force()
+        if sys.platform == "win32":
+            # 다른 프로그램이 앞에 있어도 확인 창을 맨 앞으로
+            try:
+                hwnd = int(self.wm_frame(), 16)
+                ctypes.windll.user32.ShowWindow(hwnd, 5)
+                ctypes.windll.user32.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
 
     def ok(self):
         self.result = True
@@ -781,9 +795,17 @@ class MacroApp:
             save_settings(self.settings)
         self._update_count_display()
 
+    def _expected_add(self):
+        """이번 실행(반복 횟수만큼)으로 늘어날 장수"""
+        ends = sum(1 for st in self.macro["steps"] if is_end(st))
+        return self.macro["repeat"] * ends * self._per_plate()
+
     def _near_target(self):
-        """납품수량의 95% 이상 채웠는지 (시작 확인 창을 띄울 때)"""
-        return self.target > 0 and self._total() >= self.target * 0.95
+        """시작 확인 창을 띄울지: 이번 실행이 끝나면 납품수량의 98% 이상이 되는 경우
+        (한 번에 많이 늘어서 98% 를 건너뛰고 넘어가는 경우도 포함)"""
+        if self.target <= 0:
+            return False
+        return self._total() + self._expected_add() >= self.target * 0.98
 
     def _target_reached(self):
         return self.target > 0 and self._total() >= self.target
@@ -1221,7 +1243,9 @@ class MacroApp:
                     elif arg == "add_end":
                         self._toggle_end_here()
                     elif arg == "start":
-                        self.start()
+                        # 확인 창이 떠 있는 동안에도 단축키(F9 다시 누르기 등)가
+                        # 계속 처리되도록 따로 실행
+                        self.root.after(0, self.start)
                     elif arg == "pause":
                         self.toggle_pause()
                     elif arg == "stop":
@@ -1310,7 +1334,7 @@ class MacroApp:
             return
         self._collect_options()
         if self._near_target():
-            # 납품수량의 95% 이상 채웠을 때만 확인 창
+            # 이번 실행 후 납품수량의 98% 이상이 될 때만 확인 창
             dlg = StartConfirm(self)
             self._confirm_dlg = dlg
             self.root.wait_window(dlg)
