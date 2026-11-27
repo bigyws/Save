@@ -618,7 +618,12 @@
     if (e.target.closest && e.target.closest("input")) return;
     if (e.key === "ArrowRight") go(1); else if (e.key === "ArrowLeft") go(-1);
   });
-  function swipeTip(){ if (store.swipeTip) return; store.swipeTip = true; save(); setTimeout(() => toast("화면을 옆으로 밀면 보관함과 키링·설정으로 넘어가요"), 1500); }
+  function swipeTip(){
+    if (store.swipeTip) return;
+    const wait = () => { if (document.querySelector(".overlay")) { setTimeout(wait, 400); return; }
+      setTimeout(() => { toast("화면을 옆으로 밀면 보관함과 키링·설정으로 넘어가요"); store.swipeTip = true; save(); }, 1200); };
+    setTimeout(wait, 600);
+  }
 
   /* ---------- 시작 ---------- */
   Promise.all([fetch("data/verses-365.json?v=20261125").then(r => r.json()), fetch("data/calendar.json?v=20261125").then(r => r.json())])
