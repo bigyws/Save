@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>풍성한교회 키링 인쇄용</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  /* 실제 크기 인쇄용. 1mm 단위로 그립니다.
+     빨간 가는 선 = 재단선(자르는 선), 바깥 2mm = 여유분(도련), 위쪽 작은 원 = 고리 구멍 */
+  :root{ --green:#1F7A3F; --orange:#EE7A1E; --gold:#E7B24A; --ink:#23262E; --cut:#E6007E; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @page{ margin:0 }
+  body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{position:relative;overflow:hidden;break-after:page;background:#fff}
+  .page:last-child{break-after:auto}
+  .label{position:absolute;left:1.5mm;top:1mm;font-size:2mm;color:#999}
+  .cut{position:absolute;border:0.2mm solid var(--cut);pointer-events:none}
+  /* 원형 50mm: 페이지 60mm, 도련 54mm */
+  .pA{width:60mm;height:60mm}
+  .pA .bleed{position:absolute;left:3mm;top:3mm;width:54mm;height:54mm;border-radius:50%;overflow:hidden}
+  .pA .cut.outer{left:5mm;top:5mm;width:50mm;height:50mm;border-radius:50%}
+  .pA .cut.hole{left:28.25mm;top:7.25mm;width:3.5mm;height:3.5mm;border-radius:50%}
+  /* 카드형 40x60mm: 페이지 48x68mm, 도련 44x64mm */
+  .pB{width:48mm;height:68mm}
+  .pB .bleed{position:absolute;left:2mm;top:2mm;width:44mm;height:64mm;border-radius:7.5mm;overflow:hidden}
+  .pB .cut.outer{left:4mm;top:4mm;width:40mm;height:60mm;border-radius:5.5mm}
+  .pB .cut.hole{left:22.25mm;top:6.25mm;width:3.5mm;height:3.5mm;border-radius:50%}
+  .abs{position:absolute;left:0;right:0;text-align:center}
+
+  /* A 앞면 (도련 원 기준 좌표: 원래 시안의 50mm 원 + 2mm) */
+  .a-front{background:#fff}
+  .a-front img{position:absolute;left:50%;top:10.2mm;width:26.2mm;transform:translateX(-50%)}
+  .a-front .nm{top:37mm;font-size:5.5mm;font-weight:900;color:var(--green);letter-spacing:-.12mm}
+  .a-front .nm span{color:#4A4A4A}
+  .a-front .en{top:44.4mm;font-size:1.65mm;font-weight:700;color:#5A5A5A;letter-spacing:.12mm}
+  /* A 뒷면 */
+  .a-back{background:#FBF7EE}
+  .a-back .top{position:absolute;left:0;right:0;top:0;height:21.5mm;background:linear-gradient(180deg,#2E9B55,#1F7A3F);color:#fff}
+  .a-back .wave{position:absolute;left:50%;top:8.4mm;transform:translateX(-50%);width:5.5mm;height:5.5mm}
+  .a-back .t1{top:13.6mm;font-size:2.9mm;font-weight:900}
+  .a-back .t2{top:17.6mm;font-size:1.65mm;opacity:.92}
+  .a-back .info{position:absolute;left:7mm;right:7mm;top:23.2mm;text-align:center}
+  .a-back h4{font-size:1.55mm;color:var(--green);letter-spacing:.12mm;margin:.75mm 0 .25mm}
+  .a-back p{font-size:1.75mm;line-height:1.45;font-weight:700}
+  .a-back p.tel{margin-top:.75mm;font-size:2.15mm;font-weight:900;color:var(--green)}
+  /* B 앞면 (도련 사각 기준: 원래 40x60 + 2mm) */
+  .b-front{background:#fff}
+  .b-front img{position:absolute;left:50%;top:10.75mm;width:27.5mm;transform:translateX(-50%)}
+  .b-front .sm{top:39.5mm;font-size:1.9mm;color:#555;letter-spacing:.12mm}
+  .b-front .nm{top:41.9mm;font-size:5.75mm;font-weight:900;color:var(--green);letter-spacing:-.12mm}
+  .b-front .nm span{color:#4A4A4A}
+  .b-front .band{position:absolute;left:0;right:0;bottom:0;height:11mm;background:linear-gradient(90deg,var(--orange),var(--gold));color:#fff;display:flex;align-items:center;justify-content:center;font-size:2.5mm;font-weight:900;letter-spacing:.25mm;padding-top:-2mm}
+  /* B 뒷면 */
+  .b-back{background:#FBF7EE}
+  .b-back .top{position:absolute;left:0;right:0;top:0;height:24.25mm;background:linear-gradient(180deg,#2E9B55,#1F7A3F);color:#fff}
+  .b-back .wave{position:absolute;left:50%;top:9mm;transform:translateX(-50%);width:6.25mm;height:6.25mm}
+  .b-back .t1{top:16mm;font-size:2.9mm;font-weight:900}
+  .b-back .t2{top:20.2mm;font-size:1.75mm;opacity:.92}
+  .b-back .info{position:absolute;left:5.5mm;right:5.5mm;top:25.75mm;font-size:1.75mm;line-height:1.5}
+  .b-back h4{font-size:1.6mm;color:var(--green);letter-spacing:.12mm;margin:1.25mm 0 .5mm;text-align:center}
+  .b-back .row{display:flex;justify-content:space-between;border-bottom:.15mm dashed #DDD3C0;padding:.35mm 0}
+  .b-back .row span:last-child{font-weight:700}
+  .b-back .addr{font-size:1.7mm;color:#555;text-align:center}
+  .b-back .tel{margin-top:.75mm;font-size:2.15mm;font-weight:900;color:var(--green);text-align:center}
+  .b-back .foot{position:absolute;left:0;right:0;bottom:5.25mm;text-align:center}
+  .b-back .foot img{width:16.25mm}
+</style>
+</head>
+<body>
+  <!-- A 원형 앞면 -->
+  <div class="page pA">
+    <div class="bleed a-front"><img src="../img/emblem.png" alt=""><div class="abs nm">풍성한<span>교회</span></div><div class="abs en">PUNG SUNG HAN CHURCH</div></div>
+    <div class="cut outer"></div><div class="cut hole"></div>
+  </div>
+  <!-- A 원형 뒷면 -->
+  <div class="page pA">
+    <div class="bleed a-back">
+      <div class="top"><svg class="wave" viewBox="0 0 24 24" fill="none" stroke="#FFE7A6" stroke-width="2.2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
+        <div class="abs t1">휴대폰에 대 주세요</div><div class="abs t2">오늘의 말씀이 열립니다</div></div>
+      <div class="info"><h4>주일예배</h4><p>1부 오전 9:00 · 2부 오전 11:00<br>오후예배 1:30</p><h4>오시는 길</h4><p>경기도 하남시 덕풍북로6번길 9-13</p><p class="tel">☎ 031-796-6776</p></div>
+    </div>
+    <div class="cut outer"></div><div class="cut hole"></div>
+  </div>
+  <!-- B 카드형 앞면 -->
+  <div class="page pB">
+    <div class="bleed b-front"><img src="../img/emblem.png" alt=""><div class="abs sm">대한예수교 장로회</div><div class="abs nm">풍성한<span>교회</span></div><div class="band">말씀 키링</div></div>
+    <div class="cut outer"></div><div class="cut hole"></div>
+  </div>
+  <!-- B 카드형 뒷면 -->
+  <div class="page pB">
+    <div class="bleed b-back">
+      <div class="top"><svg class="wave" viewBox="0 0 24 24" fill="none" stroke="#FFE7A6" stroke-width="2.2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
+        <div class="abs t1">휴대폰에 대 주세요</div><div class="abs t2">오늘의 말씀이 열립니다</div></div>
+      <div class="info"><h4>주일예배</h4>
+        <div class="row"><span>1부</span><span>오전 9:00</span></div><div class="row"><span>2부</span><span>오전 11:00</span></div><div class="row"><span>오후예배</span><span>오후 1:30</span></div>
+        <h4>오시는 길</h4><div class="addr">경기도 하남시 덕풍북로6번길 9-13</div><div class="tel">☎ 031-796-6776</div></div>
+      <div class="foot"><img src="../img/logo.png" alt="풍성한교회"></div>
+    </div>
+    <div class="cut outer"></div><div class="cut hole"></div>
+  </div>
+</body>
+</html>
