@@ -674,23 +674,29 @@
   /* ---------- 옆으로 밀어서 화면 넘기기: 오늘 → 보관함 → 교회소식 → 오늘 (반대로도) ---------- */
   const ORDER = ["today", "box", "settings"];
   const nextView = (step) => ORDER[(ORDER.indexOf(view) + step + ORDER.length) % ORDER.length];
-  const EASE = "cubic-bezier(.2,.75,.25,1)";
+  // 손을 뗄 때 밀던 속도를 이어받아 천천히 멈추는 곡선 (확 끌려가는 느낌 없이)
+  const EASE = "cubic-bezier(.25,.6,.35,1)";
+  let settleMs = 320;
   const pagesEl = $("pages");
   const secOf = (v) => $("view-" + v);
   let sx = 0, sy = 0, st = 0, lock = null, dragging = false, dx = 0, busy = false, lastX = 0, lastT = 0, vx = 0;
   function place(dxPx, withTransition){
     const w = pagesEl.clientWidth, cur = secOf(view), prv = secOf(nextView(-1)), nxt = secOf(nextView(1));
-    const tr = withTransition ? `transform .32s ${EASE}` : "none", GAP = 14;
+    const tr = withTransition ? `transform ${settleMs}ms ${EASE}` : "none", GAP = 14;
     [[cur, dxPx], [prv, dxPx - w - GAP], [nxt, dxPx + w + GAP]].forEach(([el, x]) => { el.style.transition = tr; el.style.transform = `translate3d(${x}px,0,0)`; el.style.visibility = ""; });
   }
   function prep(){}
-  function finish(step){
+  function finish(step, fromX, speed){
     busy = true;
-    const w = pagesEl.clientWidth;
-    place(step ? (step > 0 ? -w - 14 : w + 14) : 0, true);
-    setTimeout(() => { if (step) show(nextView(step)); else show(view); busy = false; }, 330);
+    const w = pagesEl.clientWidth, target = step ? (step > 0 ? -w - 14 : w + 14) : 0;
+    const remain = Math.abs(target - (fromX || 0));
+    // 남은 거리와 손가락 속도로 시간을 정함: 빠르게 밀면 빨리, 천천히 밀면 천천히
+    const v = Math.max(.5, Math.min(2.5, Math.abs(speed || 0)));
+    settleMs = Math.round(Math.max(220, Math.min(480, remain / v * 1.6)));
+    place(target, true);
+    setTimeout(() => { if (step) show(nextView(step)); else show(view); busy = false; }, settleMs + 20);
   }
-  function go(step){ if (busy) return; prep(); place(0, false); void pagesEl.offsetWidth; finish(step); }
+  function go(step){ if (busy) return; place(0, false); void pagesEl.offsetWidth; finish(step, 0, .9); }
   pagesEl.addEventListener("touchstart", (e) => {
     dragging = false; lock = null;
     if (busy || document.querySelector(".overlay") || e.touches.length > 1 || (e.target.closest && e.target.closest("input"))) return;
@@ -702,15 +708,19 @@
     const t = e.touches[0], mx = t.clientX - sx, my = t.clientY - sy;
     if (lock === null) { if (Math.abs(mx) < 8 && Math.abs(my) < 8) return; lock = Math.abs(mx) > Math.abs(my) * 1.15 ? "x" : "y"; }
     if (lock !== "x") return;
-    const now = Date.now(); if (now > lastT) { vx = (t.clientX - lastX) / (now - lastT); lastX = t.clientX; lastT = now; }
+    const now = Date.now(); if (now > lastT) { const v = (t.clientX - lastX) / (now - lastT); vx = vx * .4 + v * .6; lastX = t.clientX; lastT = now; }
     dx = mx;
     place(dx, false);
   }, {passive: true});
   const endSwipe = () => {
     if (!dragging) return; dragging = false;
     if (lock !== "x") return;
-    const w = pagesEl.clientWidth, flick = Math.abs(vx) > .45 && Math.abs(dx) > 25;
-    finish(Math.abs(dx) > w * .22 || flick ? (dx < 0 ? 1 : -1) : 0);
+    const w = pagesEl.clientWidth;
+    // 손을 뗄 때 움직이던 방향과 속도를 우선: 넘기는 쪽으로 움직이고 있었으면 넘기고, 되돌리던 중이면 제자리로
+    const flick = Math.abs(vx) > .35 && Math.sign(vx) === Math.sign(dx);
+    const back = Math.abs(vx) > .35 && Math.sign(vx) !== Math.sign(dx);
+    const go1 = !back && (flick || Math.abs(dx) > w * .4);
+    finish(go1 ? (dx < 0 ? 1 : -1) : 0, dx, go1 || back ? vx : .6);
   };
   pagesEl.addEventListener("touchend", endSwipe, {passive: true});
   pagesEl.addEventListener("touchcancel", endSwipe, {passive: true});
