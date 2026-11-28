@@ -615,7 +615,7 @@
   const viewKey = () => iso(previewDate || new Date());
   $("amenBtn").onclick = () => { const k = viewKey(); store.amen[k] = !store.amen[k]; save(); $("amenBtn").setAttribute("aria-pressed", String(!!store.amen[k])); if (store.amen[k]) toast("아멘 · 보관함 카드에 하트가 표시돼요"); if (view === "box") renderBox(); };
   $("shareBtn").onclick = () => {
-    const t = `${current[store.lang]}\n— ${refWithVersion(current, store.lang)}\n\n풍성한교회 말씀 키링`;
+    const t = `${current[store.lang]}\n— ${refWithVersion(current, store.lang)}`;
     if (navigator.share) { navigator.share({ title: "오늘의 말씀", text: t }).catch(() => {}); return; }
     const fallback = () => { const q = $("verseQ"); const r = document.createRange(); r.selectNodeContents(q); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("말씀을 선택했어요. 길게 눌러 복사하세요"); };
     try { navigator.clipboard.writeText(t).then(() => toast("말씀을 복사했어요 · 붙여넣기로 보내 주세요"), fallback); } catch(err){ fallback(); }
