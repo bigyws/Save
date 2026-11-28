@@ -155,7 +155,8 @@
   .days i.td{border:1.5px solid var(--hi);color:var(--hi)}
   .langbox{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 14px 12px}
   .langbox > b{display:block;font-size:12px;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
-  .vtext .refrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+  .vtext .refrow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:12px}
+  .vtext .refrow > div:first-child{flex:1 1 auto;min-width:0}
   .vtext .refrow .ref{margin-top:0}
   .pill{display:flex;flex:none;background:rgba(20,24,34,.38);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:2px}
   .pill button{border:0;background:none;font-size:11px;font-weight:700;color:#fff;opacity:.8;padding:5px 10px;border-radius:99px;white-space:nowrap}
@@ -183,6 +184,9 @@
   .card .chips .lgrp{display:flex;gap:6px;align-items:center}
   .card .chips .ib{width:30px;height:30px;padding:0;display:grid;place-items:center;border-radius:50%;background:rgba(20,24,34,.42);border:1px solid rgba(255,255,255,.35)}
   .card .chips .ib[aria-pressed="true"] svg{fill:#E0605A;stroke:#E0605A}
+  .vtext .refrow .ref{align-items:flex-start}
+  .vtext .refrow .ref:before{flex:none;margin-top:.62em}
+  .vtext .ref .rvs{display:flex;flex-wrap:wrap;column-gap:6px;row-gap:1px;min-width:0}
   .vtext .ref .rv{white-space:nowrap}
   .seg.langtoday{flex:none;margin:10px 0 0}
   .boxacts{padding:0 2px 2px;gap:26px;font-size:14px}
@@ -328,7 +332,7 @@
   const VOICE_NAME = {ko:"한국어", en:"English", ja:"日本語", zh:"中文"};
   const VERSION = {ko:"개역한글", en:"KJV", ja:"口語訳", zh:"和合本"};
   const refWithVersion = (c, l) => `${c["ref_" + l]} · ${VERSION[l]}`;
-  const refHtml = (c, l) => `<span class="rv">${esc(c["ref_" + l])}</span> <span class="rv">· ${VERSION[l]}</span>`;
+  const refHtml = (c, l) => `<span class="rvs"><span class="rv">${esc(c["ref_" + l])}</span><span class="rv">· ${VERSION[l]}</span></span>`;
   const COLORS = {"1월":"#8E7BB8","2월":"#C36A76","3월":"#5A8F6A","4월":"#6FA054","5월":"#4E8B5C","6월":"#4F7FA8","7월":"#3F8C77","8월":"#3E5C9A","9월":"#9A7A4E","10월":"#B8693A","11월":"#B88A2E","12월":"#C9973F"};
   const KEY = "malsseum-keyring-v1";
   let store = load();
@@ -678,17 +682,19 @@
   const EASE = "cubic-bezier(.25,.6,.35,1)";
   let settleMs = 320;
   const pagesEl = $("pages");
+  const pageW = () => Math.round(pagesEl.getBoundingClientRect().width);
   const secOf = (v) => $("view-" + v);
   let sx = 0, sy = 0, st = 0, lock = null, dragging = false, dx = 0, busy = false, lastX = 0, lastT = 0, vx = 0;
   function place(dxPx, withTransition){
-    const w = pagesEl.clientWidth, cur = secOf(view), prv = secOf(nextView(-1)), nxt = secOf(nextView(1));
+    const w = pageW(), cur = secOf(view), prv = secOf(nextView(-1)), nxt = secOf(nextView(1));
     const tr = withTransition ? `transform ${settleMs}ms ${EASE}` : "none", GAP = 14;
-    [[cur, dxPx], [prv, dxPx - w - GAP], [nxt, dxPx + w + GAP]].forEach(([el, x]) => { el.style.transition = tr; el.style.transform = `translate3d(${x}px,0,0)`; el.style.visibility = ""; });
+    const d = Math.round(dxPx);
+    [[cur, d], [prv, d - w - GAP], [nxt, d + w + GAP]].forEach(([el, x]) => { el.style.transition = tr; el.style.transform = `translate3d(${x}px,0,0)`; el.style.visibility = ""; });
   }
   function prep(){}
   function finish(step, fromX, speed){
     busy = true;
-    const w = pagesEl.clientWidth, target = step ? (step > 0 ? -w - 14 : w + 14) : 0;
+    const w = pageW(), target = step ? (step > 0 ? -w - 14 : w + 14) : 0;
     const remain = Math.abs(target - (fromX || 0));
     // 남은 거리와 손가락 속도로 시간을 정함: 빠르게 밀면 빨리, 천천히 밀면 천천히
     const v = Math.max(.5, Math.min(2.5, Math.abs(speed || 0)));
@@ -715,7 +721,7 @@
   const endSwipe = () => {
     if (!dragging) return; dragging = false;
     if (lock !== "x") return;
-    const w = pagesEl.clientWidth;
+    const w = pageW();
     // 손을 뗄 때 움직이던 방향과 속도를 우선: 넘기는 쪽으로 움직이고 있었으면 넘기고, 되돌리던 중이면 제자리로
     const flick = Math.abs(vx) > .35 && Math.sign(vx) === Math.sign(dx);
     const back = Math.abs(vx) > .35 && Math.sign(vx) !== Math.sign(dx);
