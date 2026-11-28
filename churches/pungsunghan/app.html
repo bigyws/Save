@@ -166,6 +166,10 @@
   #view-box .mini{aspect-ratio:auto;height:auto;min-height:0}
   #view-box.all{overflow-y:auto}
   #view-box.all .grid{flex:none;grid-template-rows:none;grid-auto-rows:170px}
+  .card .chips .lgrp{display:flex;gap:6px;align-items:center}
+  .card .chips .ib{width:30px;height:30px;padding:0;display:grid;place-items:center;border-radius:50%;background:rgba(20,24,34,.3);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.35)}
+  .card .chips .ib[aria-pressed="true"] svg{fill:#E0605A;stroke:#E0605A}
+  .vtext .ref .rv{white-space:nowrap}
   .seg.langtoday{flex:none;margin:10px 0 0}
   .boxacts{padding:0 2px 2px;gap:26px;font-size:14px}
   .mini .amenmark{position:absolute;top:8px;right:8px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
@@ -238,12 +242,6 @@
   <section id="view-box" hidden>
     <h2>말씀 보관함</h2><p class="lead"><span>키링으로 받은 말씀 카드가 모여요</span><button type="button" id="boxAll" class="allbtn" hidden></button></p>
     <div class="week"><div class="wtop"><b id="boxStreak"></b><span id="boxWeek"></span></div><div class="days" id="boxDays"></div></div>
-    <div class="langbox"><b>오늘 말씀</b>
-      <div class="actions boxacts">
-        <button type="button" id="amenBtn" aria-pressed="false"><svg class="ic heart" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg><span>아멘</span></button>
-        <button type="button" id="shareBtn"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span>공유</span></button>
-      </div>
-    </div>
     <div class="grid" id="boxGrid"></div>
   </section>
 
@@ -319,6 +317,7 @@
   const VOICE_NAME = {ko:"한국어", en:"English", ja:"日本語", zh:"中文"};
   const VERSION = {ko:"개역한글", en:"KJV", ja:"口語訳", zh:"和合本"};
   const refWithVersion = (c, l) => `${c["ref_" + l]} · ${VERSION[l]}`;
+  const refHtml = (c, l) => `<span class="rv">${esc(c["ref_" + l])}</span> <span class="rv">· ${VERSION[l]}</span>`;
   const COLORS = {"1월":"#8E7BB8","2월":"#C36A76","3월":"#5A8F6A","4월":"#6FA054","5월":"#4E8B5C","6월":"#4F7FA8","7월":"#3F8C77","8월":"#3E5C9A","9월":"#9A7A4E","10월":"#B8693A","11월":"#B88A2E","12월":"#C9973F"};
   const KEY = "malsseum-keyring-v1";
   let store = load();
@@ -392,10 +391,10 @@
     const chipLeft = c.key ? c.name : (idx >= 0 ? `DAY ${idx + 1}` : c.date_ko);
     $("card").style.setProperty("--c", color(c));
     $("card").innerHTML = `${MalsseumArt.artFor(c, "cd")}<div class="shade"></div>
-      ${opened ? `<div class="chips"><span>${esc(chipLeft)}</span><span>${esc(c.key ? "특별 카드" : c.theme)}</span></div>
+      ${opened ? `<div class="chips"><div class="lgrp"><span>${esc(chipLeft)}</span><button type="button" class="ib" id="amenBtn" aria-label="아멘" aria-pressed="${!!store.amen[vIso]}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button><button type="button" class="ib" id="shareBtn" aria-label="공유"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button></div><span>${esc(c.key ? "특별 카드" : c.theme)}</span></div>
       <div class="vtext"><q class="${L}${long || store.dual ? " long" : ""}" id="verseQ">${chunkHtml(text, L)}</q>
       ${store.dual ? `<div class="sub${subLang === "en" ? "" : " cjk"}">${chunkHtml(c[subLang], subLang)}</div>` : ""}
-      <div class="refrow"><div><div class="ref">${esc(ref)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${esc(refWithVersion(c, subLang))}</div>` : ""}</div>
+      <div class="refrow"><div><div class="ref">${refHtml(c, L)}</div>${store.dual ? `<div class="ref" style="margin-top:4px;opacity:.85">${refHtml(c, subLang)}</div>` : ""}</div>
       <div class="pill" role="group" aria-label="보기 방식"><button type="button" data-dual="0" aria-pressed="${!store.dual}">한 언어</button><button type="button" data-dual="1" aria-pressed="${store.dual}">두 언어</button></div></div></div>` : ""}
       ${opened ? "" : `<div class="locked"><div><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#E7C784" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 0 8M10 5.5a10 10 0 0 1 0 13M14 3a14 14 0 0 1 0 18"/></svg>
         <b>키링을 휴대폰 뒷면에 대주세요</b><p>오늘의 말씀이 기다리고 있어요</p>${store.admin ? `<button class="btn" type="button" id="unlockBtn">관리자 · 키링 없이 열기</button>` : ""}</div></div>`}`;
@@ -408,8 +407,7 @@
     $("speedBtn").textContent = store.rate.toFixed(1) + "x";
     $("playBtn").title = voiceLabel();
     $("playTime").textContent = "0:00";
-    ["amenBtn","shareBtn"].forEach((id) => { $(id).disabled = !opened; });
-    $("amenBtn").setAttribute("aria-pressed", String(!!store.amen[vIso]));
+    if ($("amenBtn")) { $("amenBtn").onclick = doAmen; $("shareBtn").onclick = doShare; }
     document.querySelectorAll("[data-dual]").forEach(b => b.setAttribute("aria-pressed", String(store.dual) === (b.dataset.dual === "1" ? "true" : "false")));
     fitArt();
   }
@@ -613,13 +611,13 @@
   $("playBtn").onclick = () => speaking ? stopSpeak() : startSpeak();
   $("speedBtn").onclick = () => { const r = [0.8, 1, 1.2]; store.rate = r[(r.indexOf(store.rate) + 1) % r.length] || 1; save(); $("speedBtn").textContent = store.rate.toFixed(1) + "x"; if (speaking) startSpeak(); };
   const viewKey = () => iso(previewDate || new Date());
-  $("amenBtn").onclick = () => { const k = viewKey(); store.amen[k] = !store.amen[k]; save(); $("amenBtn").setAttribute("aria-pressed", String(!!store.amen[k])); if (store.amen[k]) toast("아멘 · 보관함 카드에 하트가 표시돼요"); if (view === "box") renderBox(); };
-  $("shareBtn").onclick = () => {
+  function doAmen(){ const k = viewKey(); store.amen[k] = !store.amen[k]; save(); $("amenBtn").setAttribute("aria-pressed", String(!!store.amen[k])); if (store.amen[k]) toast("아멘 · 보관함 카드에 하트가 표시돼요"); if (view === "box") renderBox(); }
+  function doShare(){
     const t = `${current[store.lang]}\n— ${refWithVersion(current, store.lang)}`;
     if (navigator.share) { navigator.share({ title: "오늘의 말씀", text: t }).catch(() => {}); return; }
     const fallback = () => { const q = $("verseQ"); const r = document.createRange(); r.selectNodeContents(q); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("말씀을 선택했어요. 길게 눌러 복사하세요"); };
     try { navigator.clipboard.writeText(t).then(() => toast("말씀을 복사했어요 · 붙여넣기로 보내 주세요"), fallback); } catch(err){ fallback(); }
-  };
+  }
   $("tapBtn").onclick = () => openToday(true);
   $("boxAll").onclick = () => { boxAll = !boxAll; renderBox(); $("view-box").scrollTo(0, 0); };
   // 관리자 모드: 교회 로고를 2초 안에 5번 누르면 켜고 끕니다.
